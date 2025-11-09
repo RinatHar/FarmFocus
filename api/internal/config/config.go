@@ -1,10 +1,11 @@
 package config
 
 import (
-    "log"
-    "os"
+	"fmt"
+	"log"
+	"os"
 
-    "github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -33,4 +34,14 @@ func LoadConfig() *Config {
     }
 
     return cfg
+}
+
+func (c *Config) GetPostgresDSN() string {
+    return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+        c.DBUser,
+        c.DBPass,
+        c.DBHost,
+        c.DBPort,
+        c.DBName,
+    )
 }
