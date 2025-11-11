@@ -13,6 +13,8 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - farmfocus-network
 
   api:
     build:
@@ -26,6 +28,8 @@ services:
       - db
     ports:
       - "8080:8080"
+    networks:
+      - farmfocus-network
 
   migrate:
     image: golang:1.25-alpine
@@ -37,6 +41,28 @@ services:
       - ./api/.env
     depends_on:
       - db
+    networks:
+      - farmfocus-network
+
+  bot-api:
+    build:
+      context: ./bot-api
+      dockerfile: Dockerfile
+    container_name: farmfocus_bot_api
+    restart: always
+    env_file:
+      - ./bot-api/.env
+    depends_on:
+      - api
+    networks:
+      - farmfocus-network
+    # Порт не нужен для бота, но можно добавить для health checks
+    ports:
+      - "8081:8080"
 
 volumes:
   db_data:
+
+networks:
+  farmfocus-network:
+    driver: bridge

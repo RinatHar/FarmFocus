@@ -2,10 +2,8 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/RinatHar/FarmFocus/api/internal/model"
 	"github.com/jackc/pgx/v5"
@@ -20,32 +18,47 @@ func NewTaskRepo(db *pgxpool.Pool) *TaskRepo {
 	return &TaskRepo{db: db}
 }
 
-// Create
-func (r *TaskRepo) Create(ctx context.Context, t *model.Task) error {
-	now := time.Now()
-	t.CreatedAt = now
-	t.UpdatedAt = now
-
-	query := `INSERT INTO tasks 
-        (user_id, type, title, description, importance, category_id, due_date, repeat_interval, reminder_time, status, xp_reward, gold_reward, created_at, created_by, updated_at, updated_by)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id`
-
+func (r *TaskRepo) Create(ctx context.Context, task *model.Task) error {
+	query := `
+		INSERT INTO task (user_id, type, title, description, difficulty, tag_id, due_date, repeat_interval, is_done, xp_reward, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		RETURNING id
+	`
 	return r.db.QueryRow(ctx, query,
-		t.UserID, t.Type, t.Title, t.Description, t.Importance, t.CategoryID,
-		t.DueDate, t.RepeatInterval, t.ReminderTime, t.Status, t.XPReward, t.GoldReward,
-		t.CreatedAt, t.CreatedBy, t.UpdatedAt, t.UpdatedBy,
-	).Scan(&t.ID)
+		task.UserID, task.Type, task.Title, task.Description, task.Difficulty, task.TagID,
+		task.DueDate, task.RepeatInterval, task.IsDone, task.XPReward, task.CreatedAt,
+	).Scan(&task.ID)
 }
 
-// GetAll
-func (r *TaskRepo) GetAll(ctx context.Context, userID int) ([]model.Task, error) {
+func (r *TaskRepo) GetByID(ctx context.Context, id int, userID int64) (*model.Task, error) {
+	var task model.Task
 	query := `
-        SELECT id, user_id, type, title, description, importance, category_id, due_date, 
-               repeat_interval, reminder_time, status, xp_reward, gold_reward, created_at,
-               created_by, updated_at, updated_by
-        FROM tasks
-        WHERE user_id=$1 AND deleted_at IS NULL
-    `
+		SELECT id, user_id, type, title, description, difficulty, tag_id, due_date, 
+		       repeat_interval, is_done, xp_reward, created_at
+		FROM task
+		WHERE id = $1 AND user_id = $2
+	`
+	err := r.db.QueryRow(ctx, query, id, userID).Scan(
+		&task.ID, &task.UserID, &task.Type, &task.Title, &task.Description, &task.Difficulty,
+		&task.TagID, &task.DueDate, &task.RepeatInterval, &task.IsDone, &task.XPReward, &task.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("task with id=%d not found", id)
+		}
+		return nil, err
+	}
+	return &task, nil
+}
+
+func (r *TaskRepo) GetAll(ctx context.Context, userID int64) ([]model.Task, error) {
+	query := `
+		SELECT id, user_id, type, title, description, difficulty, tag_id, due_date, 
+		       repeat_interval, is_done, xp_reward, created_at
+		FROM task
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+	`
 	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err
@@ -54,98 +67,165 @@ func (r *TaskRepo) GetAll(ctx context.Context, userID int) ([]model.Task, error)
 
 	tasks := []model.Task{}
 	for rows.Next() {
-		var t model.Task
+		var task model.Task
 		if err := rows.Scan(
-			&t.ID, &t.UserID, &t.Type, &t.Title, &t.Description, &t.Importance,
-			&t.CategoryID, &t.DueDate, &t.RepeatInterval, &t.ReminderTime,
-			&t.Status, &t.XPReward, &t.GoldReward, &t.CreatedAt,
-			&t.CreatedBy, &t.UpdatedAt, &t.UpdatedBy,
+			&task.ID, &task.UserID, &task.Type, &task.Title, &task.Description, &task.Difficulty,
+			&task.TagID, &task.DueDate, &task.RepeatInterval, &task.IsDone, &task.XPReward, &task.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
-		tasks = append(tasks, t)
+		tasks = append(tasks, task)
 	}
-
 	return tasks, nil
 }
 
-// GetByID
-func (r *TaskRepo) GetByID(ctx context.Context, id int, userID int) (*model.Task, error) {
-	var t model.Task
+func (r *TaskRepo) Update(ctx context.Context, task *model.Task) error {
 	query := `
-        SELECT id, user_id, type, title, description, importance, category_id, due_date, 
-               repeat_interval, reminder_time, status, xp_reward, gold_reward, created_at,
-               created_by, updated_at, updated_by
-        FROM tasks
-        WHERE id=$1 AND user_id=$2 AND deleted_at IS NULL
-    `
-	err := r.db.QueryRow(ctx, query, id, userID).Scan(
-		&t.ID, &t.UserID, &t.Type, &t.Title, &t.Description, &t.Importance,
-		&t.CategoryID, &t.DueDate, &t.RepeatInterval, &t.ReminderTime,
-		&t.Status, &t.XPReward, &t.GoldReward, &t.CreatedAt,
-		&t.CreatedBy, &t.UpdatedAt, &t.UpdatedBy,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("task with id=%d not found or deleted", id)
-		}
-		return nil, err
-	}
-	return &t, nil
-}
-
-// Update
-func (r *TaskRepo) Update(ctx context.Context, t *model.Task) error {
-	t.UpdatedAt = time.Now()
-
-	query := `
-        UPDATE tasks
-        SET title=$1, description=$2, importance=$3, category_id=$4, due_date=$5, 
-            repeat_interval=$6, reminder_time=$7, status=$8, updated_at=$9, updated_by=$10
-        WHERE id=$11 AND user_id=$12 AND deleted_at IS NULL
-        RETURNING id, user_id, type, title, description, importance, category_id, due_date, 
-                  repeat_interval, reminder_time, status, xp_reward, gold_reward, created_at, 
-                  created_by, updated_at, updated_by
-    `
-
+		UPDATE task
+		SET title = $1, description = $2, difficulty = $3, tag_id = $4, due_date = $5, 
+		    repeat_interval = $6, is_done = $7, xp_reward = $8
+		WHERE id = $9 AND user_id = $10
+		RETURNING id, user_id, type, title, description, difficulty, tag_id, due_date, 
+		          repeat_interval, is_done, xp_reward, created_at
+	`
 	err := r.db.QueryRow(ctx, query,
-		t.Title, t.Description, t.Importance, t.CategoryID, t.DueDate, t.RepeatInterval, t.ReminderTime,
-		t.Status, t.UpdatedAt, t.UpdatedBy, t.ID, t.UserID,
+		task.Title, task.Description, task.Difficulty, task.TagID, task.DueDate,
+		task.RepeatInterval, task.IsDone, task.XPReward, task.ID, task.UserID,
 	).Scan(
-		&t.ID, &t.UserID, &t.Type, &t.Title, &t.Description, &t.Importance, &t.CategoryID,
-		&t.DueDate, &t.RepeatInterval, &t.ReminderTime, &t.Status, &t.XPReward, &t.GoldReward,
-		&t.CreatedAt, &t.CreatedBy, &t.UpdatedAt, &t.UpdatedBy,
+		&task.ID, &task.UserID, &task.Type, &task.Title, &task.Description, &task.Difficulty,
+		&task.TagID, &task.DueDate, &task.RepeatInterval, &task.IsDone, &task.XPReward, &task.CreatedAt,
 	)
-
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("task with id=%d not found or deleted", t.ID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("task with id=%d not found", task.ID)
 		}
 		return err
 	}
-
 	return nil
 }
 
-// Delete (soft delete)
-func (r *TaskRepo) Delete(ctx context.Context, id, userID, deletedBy int) error {
-	deletedAt := time.Now()
-
-	query := `
-        UPDATE tasks
-        SET deleted_at=$1, deleted_by=$2
-        WHERE id=$3 AND user_id=$4 AND deleted_at IS NULL
-        RETURNING id
-    `
-
-	var deletedID int
-	err := r.db.QueryRow(ctx, query, deletedAt, deletedBy, id, userID).Scan(&deletedID)
+func (r *TaskRepo) Delete(ctx context.Context, id int, userID int64) error {
+	query := `DELETE FROM task WHERE id = $1 AND user_id = $2`
+	result, err := r.db.Exec(ctx, query, id, userID)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return fmt.Errorf("task with id=%d not found, already deleted, or does not belong to user %d", id, userID)
-		}
-		return fmt.Errorf("failed to delete task: %w", err)
+		return err
 	}
 
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("task with id=%d not found or does not belong to user", id)
+	}
 	return nil
+}
+
+func (r *TaskRepo) GetByStatus(ctx context.Context, userID int64, isDone bool) ([]model.Task, error) {
+	query := `
+		SELECT id, user_id, type, title, description, difficulty, tag_id, due_date, 
+		       repeat_interval, is_done, xp_reward, created_at
+		FROM task
+		WHERE user_id = $1 AND is_done = $2
+		ORDER BY created_at DESC
+	`
+	rows, err := r.db.Query(ctx, query, userID, isDone)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	tasks := []model.Task{}
+	for rows.Next() {
+		var task model.Task
+		if err := rows.Scan(
+			&task.ID, &task.UserID, &task.Type, &task.Title, &task.Description, &task.Difficulty,
+			&task.TagID, &task.DueDate, &task.RepeatInterval, &task.IsDone, &task.XPReward, &task.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+	return tasks, nil
+}
+
+func (r *TaskRepo) MarkAsDone(ctx context.Context, id int, userID int64) error {
+	query := `UPDATE task SET is_done = true WHERE id = $1 AND user_id = $2`
+	result, err := r.db.Exec(ctx, query, id, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("task with id=%d not found or does not belong to user", id)
+	}
+	return nil
+}
+
+func (r *TaskRepo) MarkAsUndone(ctx context.Context, id int, userID int64) error {
+	query := `UPDATE task SET is_done = false WHERE id = $1 AND user_id = $2`
+	result, err := r.db.Exec(ctx, query, id, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("task with id=%d not found or does not belong to user", id)
+	}
+	return nil
+}
+
+func (r *TaskRepo) GetOverdue(ctx context.Context, userID int64) ([]model.Task, error) {
+	query := `
+		SELECT id, user_id, type, title, description, difficulty, tag_id, due_date, 
+		       repeat_interval, is_done, xp_reward, created_at
+		FROM task
+		WHERE user_id = $1 AND is_done = false AND due_date < CURRENT_DATE
+		ORDER BY due_date ASC
+	`
+	rows, err := r.db.Query(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	tasks := []model.Task{}
+	for rows.Next() {
+		var task model.Task
+		if err := rows.Scan(
+			&task.ID, &task.UserID, &task.Type, &task.Title, &task.Description, &task.Difficulty,
+			&task.TagID, &task.DueDate, &task.RepeatInterval, &task.IsDone, &task.XPReward, &task.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+	return tasks, nil
+}
+
+func (r *TaskRepo) GetByTag(ctx context.Context, userID int64, tagID int) ([]model.Task, error) {
+	query := `
+		SELECT id, user_id, type, title, description, difficulty, tag_id, due_date, 
+		       repeat_interval, is_done, xp_reward, created_at
+		FROM task
+		WHERE user_id = $1 AND tag_id = $2
+		ORDER BY created_at DESC
+	`
+	rows, err := r.db.Query(ctx, query, userID, tagID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	tasks := []model.Task{}
+	for rows.Next() {
+		var task model.Task
+		if err := rows.Scan(
+			&task.ID, &task.UserID, &task.Type, &task.Title, &task.Description, &task.Difficulty,
+			&task.TagID, &task.DueDate, &task.RepeatInterval, &task.IsDone, &task.XPReward, &task.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+	return tasks, nil
 }
