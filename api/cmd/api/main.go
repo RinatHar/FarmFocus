@@ -4,19 +4,54 @@ import (
 	"context"
 	"log"
 
+	_ "github.com/RinatHar/FarmFocus/api/docs" // важно: импорт сгенерированной документации
 	"github.com/RinatHar/FarmFocus/api/internal/config"
 	"github.com/RinatHar/FarmFocus/api/internal/handler"
 	"github.com/RinatHar/FarmFocus/api/internal/middleware"
 	"github.com/RinatHar/FarmFocus/api/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
+	echoswagger "github.com/swaggo/echo-swagger"
 )
 
+// @title FarmFocus API
+// @version 1.0
+// @description API для FarmFocus - системы управления задачами и фермой
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.swagger.io/support
+// @contact.email support@swagger.io
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host 10.155.36.40:8080
+// @BasePath /
+// @schemes http
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name X-User-ID
 func main() {
 	cfg := config.LoadConfig()
 	e := echo.New()
 
-	e.Use(middleware.AuthMiddleware()) // все endpoints требуют аутентификации
+	// CORS middleware
+	// e.Use(middleware.CORSMiddleware())
+
+	// Middleware
+	e.Use(echoMiddleware.Logger())
+	e.Use(echoMiddleware.Recover())
+	e.Use(middleware.AuthMiddleware())
+
+	// Swagger
+	e.GET("/swagger/*", echoswagger.WrapHandler)
+
+	// Health check
+	e.GET("/health", func(c echo.Context) error {
+		return c.JSON(200, map[string]string{"status": "ok"})
+	})
 
 	dbpool, err := pgxpool.New(context.Background(), cfg.GetPostgresDSN())
 	if err != nil {
@@ -51,6 +86,23 @@ func main() {
 		seedRepo,
 	)
 
+	// Routes
+	setupRoutes(e, userHandler, userStatHandler, taskHandler, tagHandler, seedHandler, userSeedHandler, bedHandler, userPlantHandler)
+
+	e.Logger.Fatal(e.Start(":" + cfg.Port))
+}
+
+func setupRoutes(
+	e *echo.Echo,
+	userHandler *handler.UserHandler,
+	userStatHandler *handler.UserStatHandler,
+	taskHandler *handler.TaskHandler,
+	tagHandler *handler.TagHandler,
+	seedHandler *handler.SeedHandler,
+	userSeedHandler *handler.UserSeedHandler,
+	bedHandler *handler.BedHandler,
+	userPlantHandler *handler.UserPlantHandler,
+) {
 	// User routes
 	u := e.Group("/users")
 	u.GET("/me", userHandler.GetCurrentUser)
@@ -132,6 +184,4 @@ func main() {
 	up.GET("/with-details", userPlantHandler.GetPlantsWithDetails)
 	up.GET("/ready", userPlantHandler.GetReadyForHarvest)
 	up.GET("/growing", userPlantHandler.GetGrowingPlants)
-
-	e.Logger.Fatal(e.Start(":" + cfg.Port))
 }

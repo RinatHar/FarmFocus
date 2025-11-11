@@ -20,3 +20,11 @@ type SeedWithUserData struct {
 	UserQuantity int64 `json:"user_quantity,omitempty"`
 	IsOwned      bool  `json:"is_owned"`
 }
+
+type AvailableSeed struct {
+	SeedID     int    `json:"seed_id"`
+	SeedName   string `json:"seed_name"`
+	Level      int    `json:"level"`
+	Rarity     string `json:"rarity"`
+	UserAmount int64  `json:"user_amount"`
+}

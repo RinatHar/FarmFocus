@@ -20,7 +20,18 @@ func NewTagHandler(repo *repository.TagRepo) *TagHandler {
 	return &TagHandler{repo: repo}
 }
 
-// GetAll возвращает все теги пользователя
+// GetAll godoc
+// @Summary Получить все теги пользователя
+// @Description Возвращает список всех тегов текущего пользователя
+// @Tags tags
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {array} model.Tag
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tags [get]
 func (h *TagHandler) GetAll(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -34,7 +45,22 @@ func (h *TagHandler) GetAll(c echo.Context) error {
 	return c.JSON(http.StatusOK, tags)
 }
 
-// GetByID возвращает тег по ID
+// GetByID godoc
+// @Summary Получить тег по ID
+// @Description Возвращает тег по указанному ID
+// @Tags tags
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Tag ID"
+// @Success 200 {object} model.Tag
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tags/{id} [get]
 func (h *TagHandler) GetByID(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -62,19 +88,36 @@ func (h *TagHandler) GetByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, tag)
 }
 
-// Create создает новый тег
+// Create godoc
+// @Summary Создать новый тег
+// @Description Создает новый тег для текущего пользователя
+// @Tags tags
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param request body TagCreateRequest true "Данные для создания тега"
+// @Success 200 {object} model.Tag
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tags [post]
 func (h *TagHandler) Create(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	var tag model.Tag
-	if err := c.Bind(&tag); err != nil {
+	var req TagCreateRequest
+	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	tag.UserID = userID
+	tag := model.Tag{
+		UserID: userID,
+		Name:   req.Name,
+		Color:  req.Color,
+	}
 
 	if err := h.repo.Create(context.Background(), &tag); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -82,7 +125,23 @@ func (h *TagHandler) Create(c echo.Context) error {
 	return c.JSON(http.StatusOK, tag)
 }
 
-// Update обновляет тег
+// Update godoc
+// @Summary Обновить тег
+// @Description Обновляет информацию о теге
+// @Tags tags
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Tag ID"
+// @Param request body TagUpdateRequest true "Обновленные данные тега"
+// @Success 200 {object} model.Tag
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tags/{id} [put]
 func (h *TagHandler) Update(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -94,13 +153,17 @@ func (h *TagHandler) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid tag ID"})
 	}
 
-	var tag model.Tag
-	if err := c.Bind(&tag); err != nil {
+	var req TagUpdateRequest
+	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	tag.ID = id
-	tag.UserID = userID
+	tag := model.Tag{
+		ID:     id,
+		UserID: userID,
+		Name:   req.Name,
+		Color:  req.Color,
+	}
 
 	if err := h.repo.Update(context.Background(), &tag); err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -112,7 +175,23 @@ func (h *TagHandler) Update(c echo.Context) error {
 	return c.JSON(http.StatusOK, tag)
 }
 
-// Delete удаляет тег
+// Delete godoc
+// @Summary Удалить тег
+// @Description Удаляет тег. Тег можно удалить только если к нему не привязаны задачи.
+// @Tags tags
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Tag ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tags/{id} [delete]
 func (h *TagHandler) Delete(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -138,7 +217,18 @@ func (h *TagHandler) Delete(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-// GetWithTaskCount возвращает теги с количеством задач
+// GetWithTaskCount godoc
+// @Summary Получить теги с количеством задач
+// @Description Возвращает теги с информацией о количестве привязанных задач
+// @Tags tags
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {array} model.TagWithCount
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tags/with-count [get]
 func (h *TagHandler) GetWithTaskCount(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -150,4 +240,18 @@ func (h *TagHandler) GetWithTaskCount(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, tags)
+}
+
+// DTO для запросов
+
+// TagCreateRequest представляет запрос на создание тега
+type TagCreateRequest struct {
+	Name  string `json:"name" example:"Работа"`
+	Color string `json:"color" example:"#FF5733"`
+}
+
+// TagUpdateRequest представляет запрос на обновление тега
+type TagUpdateRequest struct {
+	Name  string `json:"name" example:"Работа - обновлено"`
+	Color string `json:"color" example:"#33FF57"`
 }

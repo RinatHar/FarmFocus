@@ -20,7 +20,15 @@ func NewSeedHandler(repo *repository.SeedRepo) *SeedHandler {
 	return &SeedHandler{repo: repo}
 }
 
-// GetAll возвращает все семена
+// GetAll godoc
+// @Summary Получить все семена
+// @Description Возвращает полный список всех доступных семян
+// @Tags seeds
+// @Accept json
+// @Produce json
+// @Success 200 {array} model.Seed
+// @Failure 500 {object} map[string]string
+// @Router /seeds [get]
 func (h *SeedHandler) GetAll(c echo.Context) error {
 	seeds, err := h.repo.GetAll(context.Background())
 	if err != nil {
@@ -29,7 +37,18 @@ func (h *SeedHandler) GetAll(c echo.Context) error {
 	return c.JSON(http.StatusOK, seeds)
 }
 
-// GetByID возвращает семя по ID
+// GetByID godoc
+// @Summary Получить семя по ID
+// @Description Возвращает информацию о конкретном семени по его ID
+// @Tags seeds
+// @Accept json
+// @Produce json
+// @Param id path int true "Seed ID"
+// @Success 200 {object} model.Seed
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /seeds/{id} [get]
 func (h *SeedHandler) GetByID(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -46,7 +65,17 @@ func (h *SeedHandler) GetByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, seed)
 }
 
-// GetByLevel возвращает семена по уровню
+// GetByLevel godoc
+// @Summary Получить семена по уровню
+// @Description Возвращает список семян определенного уровня
+// @Tags seeds
+// @Accept json
+// @Produce json
+// @Param level query int true "Уровень семян"
+// @Success 200 {array} model.Seed
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /seeds/level [get]
 func (h *SeedHandler) GetByLevel(c echo.Context) error {
 	level, err := strconv.Atoi(c.QueryParam("level"))
 	if err != nil {
@@ -60,7 +89,17 @@ func (h *SeedHandler) GetByLevel(c echo.Context) error {
 	return c.JSON(http.StatusOK, seeds)
 }
 
-// GetByRarity возвращает семена по редкости
+// GetByRarity godoc
+// @Summary Получить семена по редкости
+// @Description Возвращает список семян определенной редкости
+// @Tags seeds
+// @Accept json
+// @Produce json
+// @Param rarity query string true "Редкость семян (common, rare, epic, legendary)"
+// @Success 200 {array} model.Seed
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /seeds/rarity [get]
 func (h *SeedHandler) GetByRarity(c echo.Context) error {
 	rarity := c.QueryParam("rarity")
 	if rarity == "" {
@@ -74,7 +113,20 @@ func (h *SeedHandler) GetByRarity(c echo.Context) error {
 	return c.JSON(http.StatusOK, seeds)
 }
 
-// Create создает новое семя (админ)
+// Create godoc
+// @Summary Создать новое семя
+// @Description Создает новое семя (только для администраторов)
+// @Tags seeds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param request body model.Seed true "Данные семени"
+// @Success 200 {object} model.Seed
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /seeds [post]
 func (h *SeedHandler) Create(c echo.Context) error {
 	var seed model.Seed
 	if err := c.Bind(&seed); err != nil {
@@ -87,7 +139,22 @@ func (h *SeedHandler) Create(c echo.Context) error {
 	return c.JSON(http.StatusOK, seed)
 }
 
-// Update обновляет семя (админ)
+// Update godoc
+// @Summary Обновить семя
+// @Description Обновляет информацию о семени (только для администраторов)
+// @Tags seeds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Seed ID"
+// @Param request body model.Seed true "Обновленные данные семени"
+// @Success 200 {object} model.Seed
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /seeds/{id} [put]
 func (h *SeedHandler) Update(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -110,7 +177,21 @@ func (h *SeedHandler) Update(c echo.Context) error {
 	return c.JSON(http.StatusOK, seed)
 }
 
-// Delete удаляет семя (админ)
+// Delete godoc
+// @Summary Удалить семя
+// @Description Удаляет семя из системы (только для администраторов)
+// @Tags seeds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Seed ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /seeds/{id} [delete]
 func (h *SeedHandler) Delete(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

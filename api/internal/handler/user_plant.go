@@ -36,7 +36,18 @@ func NewUserPlantHandler(
 	}
 }
 
-// GetUserPlants возвращает все растения пользователя
+// GetUserPlants godoc
+// @Summary Получить все растения пользователя
+// @Description Возвращает список всех растений текущего пользователя
+// @Tags user-plants
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {array} model.UserPlant
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-plants [get]
 func (h *UserPlantHandler) GetUserPlants(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -50,7 +61,22 @@ func (h *UserPlantHandler) GetUserPlants(c echo.Context) error {
 	return c.JSON(http.StatusOK, plants)
 }
 
-// GetUserPlantByID возвращает растение по ID
+// GetUserPlantByID godoc
+// @Summary Получить растение по ID
+// @Description Возвращает растение по указанному ID
+// @Tags user-plants
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Plant ID"
+// @Success 200 {object} model.UserPlant
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-plants/{id} [get]
 func (h *UserPlantHandler) GetUserPlantByID(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -78,18 +104,29 @@ func (h *UserPlantHandler) GetUserPlantByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, plant)
 }
 
-// CreateUserPlant создает новое растение
+// CreateUserPlant godoc
+// @Summary Посадить новое растение
+// @Description Сажает новое растение на грядку, используя семя из инвентаря
+// @Tags user-plants
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param request body UserPlantCreateRequest true "Данные для посадки растения"
+// @Success 200 {object} model.UserPlant
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-plants [post]
 func (h *UserPlantHandler) CreateUserPlant(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	var req struct {
-		SeedID int `json:"seed_id"`
-		BedID  int `json:"bed_id"`
-	}
-
+	var req UserPlantCreateRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
@@ -158,7 +195,23 @@ func (h *UserPlantHandler) CreateUserPlant(c echo.Context) error {
 	return c.JSON(http.StatusOK, plant)
 }
 
-// AddGrowth добавляет рост растению
+// AddGrowth godoc
+// @Summary Добавить рост растению
+// @Description Увеличивает текущий рост растения на указанное количество
+// @Tags user-plants
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Plant ID"
+// @Param request body UserPlantGrowthRequest true "Количество роста для добавления"
+// @Success 200 {object} UserPlantGrowthResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-plants/{id}/add-growth [post]
 func (h *UserPlantHandler) AddGrowth(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -170,7 +223,7 @@ func (h *UserPlantHandler) AddGrowth(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid plant ID"})
 	}
 
-	var req model.UserPlantGrowthRequest
+	var req UserPlantGrowthRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
@@ -193,10 +246,27 @@ func (h *UserPlantHandler) AddGrowth(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, map[string]int{"new_growth": newGrowth})
+	return c.JSON(http.StatusOK, UserPlantGrowthResponse{
+		NewGrowth: newGrowth,
+	})
 }
 
-// HarvestPlant собирает растение
+// HarvestPlant godoc
+// @Summary Собрать растение
+// @Description Собирает готовое к сбору растение и начисляет награды
+// @Tags user-plants
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Plant ID"
+// @Success 200 {object} model.UserPlantHarvestResult
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-plants/{id}/harvest [post]
 func (h *UserPlantHandler) HarvestPlant(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -276,7 +346,22 @@ func (h *UserPlantHandler) HarvestPlant(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
-// DeleteUserPlant удаляет растение
+// DeleteUserPlant godoc
+// @Summary Удалить растение
+// @Description Удаляет растение (например, если оно погибло)
+// @Tags user-plants
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Plant ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-plants/{id} [delete]
 func (h *UserPlantHandler) DeleteUserPlant(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -309,7 +394,18 @@ func (h *UserPlantHandler) DeleteUserPlant(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-// GetPlantsWithDetails возвращает растения с деталями семян
+// GetPlantsWithDetails godoc
+// @Summary Получить растения с деталями
+// @Description Возвращает растения с подробной информацией о семенах
+// @Tags user-plants
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {array} model.UserPlantWithSeed
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-plants/with-details [get]
 func (h *UserPlantHandler) GetPlantsWithDetails(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -323,7 +419,18 @@ func (h *UserPlantHandler) GetPlantsWithDetails(c echo.Context) error {
 	return c.JSON(http.StatusOK, plants)
 }
 
-// GetReadyForHarvest возвращает растения готовые к сбору
+// GetReadyForHarvest godoc
+// @Summary Получить растения готовые к сбору
+// @Description Возвращает растения, которые достигли максимального роста и готовы к сбору
+// @Tags user-plants
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {array} model.UserPlantWithSeed
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-plants/ready [get]
 func (h *UserPlantHandler) GetReadyForHarvest(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -337,7 +444,18 @@ func (h *UserPlantHandler) GetReadyForHarvest(c echo.Context) error {
 	return c.JSON(http.StatusOK, plants)
 }
 
-// GetGrowingPlants возвращает растущие растения
+// GetGrowingPlants godoc
+// @Summary Получить растущие растения
+// @Description Возвращает растения, которые еще не достигли максимального роста
+// @Tags user-plants
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {array} model.UserPlantWithSeed
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-plants/growing [get]
 func (h *UserPlantHandler) GetGrowingPlants(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -349,4 +467,22 @@ func (h *UserPlantHandler) GetGrowingPlants(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, plants)
+}
+
+// DTO для запросов
+
+// UserPlantCreateRequest представляет запрос на посадку растения
+type UserPlantCreateRequest struct {
+	SeedID int `json:"seed_id" example:"1"`
+	BedID  int `json:"bed_id" example:"1"`
+}
+
+// UserPlantGrowthRequest представляет запрос на добавление роста
+type UserPlantGrowthRequest struct {
+	GrowthAmount int `json:"growth_amount" example:"10"`
+}
+
+// UserPlantGrowthResponse представляет ответ при добавлении роста
+type UserPlantGrowthResponse struct {
+	NewGrowth int `json:"new_growth" example:"50"`
 }

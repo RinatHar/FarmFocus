@@ -20,7 +20,18 @@ func NewUserStatHandler(repo *repository.UserStatRepo) *UserStatHandler {
 	return &UserStatHandler{repo: repo}
 }
 
-// GetUserStats возвращает статистику пользователя
+// GetUserStats godoc
+// @Summary Получить статистику пользователя
+// @Description Возвращает статистику пользователя. Если статистика не существует - создает новую.
+// @Tags user-stats
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {object} model.UserStat
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-stats [get]
 func (h *UserStatHandler) GetUserStats(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -46,17 +57,27 @@ func (h *UserStatHandler) GetUserStats(c echo.Context) error {
 	return c.JSON(http.StatusOK, stats)
 }
 
-// AddExperience добавляет опыт пользователю
+// AddExperience godoc
+// @Summary Добавить опыт пользователю
+// @Description Увеличивает количество опыта пользователя на указанное значение
+// @Tags user-stats
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param request body UserStatAmountRequest true "Количество опыта для добавления"
+// @Success 200 {object} UserStatMessageResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-stats/experience [post]
 func (h *UserStatHandler) AddExperience(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	var req struct {
-		Amount int64 `json:"amount"`
-	}
-
+	var req UserStatAmountRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
@@ -65,20 +86,32 @@ func (h *UserStatHandler) AddExperience(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{"message": "Experience added successfully"})
+	return c.JSON(http.StatusOK, UserStatMessageResponse{
+		Message: "Experience added successfully",
+	})
 }
 
-// AddGold добавляет золото пользователю
+// AddGold godoc
+// @Summary Добавить золото пользователю
+// @Description Увеличивает количество золота пользователя на указанное значение
+// @Tags user-stats
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param request body UserStatAmountRequest true "Количество золота для добавления"
+// @Success 200 {object} UserStatMessageResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-stats/gold [post]
 func (h *UserStatHandler) AddGold(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	var req struct {
-		Amount int64 `json:"amount"`
-	}
-
+	var req UserStatAmountRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
@@ -87,10 +120,23 @@ func (h *UserStatHandler) AddGold(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{"message": "Gold added successfully"})
+	return c.JSON(http.StatusOK, UserStatMessageResponse{
+		Message: "Gold added successfully",
+	})
 }
 
-// IncrementStreak увеличивает стрик пользователя
+// IncrementStreak godoc
+// @Summary Увеличить стрик пользователя
+// @Description Увеличивает ежедневный стрик пользователя на 1
+// @Tags user-stats
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {object} UserStatMessageResponse
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-stats/streak/increment [post]
 func (h *UserStatHandler) IncrementStreak(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -101,10 +147,23 @@ func (h *UserStatHandler) IncrementStreak(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{"message": "Streak incremented"})
+	return c.JSON(http.StatusOK, UserStatMessageResponse{
+		Message: "Streak incremented",
+	})
 }
 
-// ResetStreak сбрасывает стрик пользователя
+// ResetStreak godoc
+// @Summary Сбросить стрик пользователя
+// @Description Сбрасывает ежедневный стрик пользователя до 0
+// @Tags user-stats
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {object} UserStatMessageResponse
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /user-stats/streak/reset [post]
 func (h *UserStatHandler) ResetStreak(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -115,5 +174,19 @@ func (h *UserStatHandler) ResetStreak(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{"message": "Streak reset"})
+	return c.JSON(http.StatusOK, UserStatMessageResponse{
+		Message: "Streak reset",
+	})
+}
+
+// DTO для запросов
+
+// UserStatAmountRequest представляет запрос на изменение количества (опыта/золота)
+type UserStatAmountRequest struct {
+	Amount int64 `json:"amount" example:"100"`
+}
+
+// UserStatMessageResponse представляет ответ с сообщением
+type UserStatMessageResponse struct {
+	Message string `json:"message" example:"Operation completed successfully"`
 }

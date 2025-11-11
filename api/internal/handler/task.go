@@ -27,20 +27,41 @@ func NewTaskHandler(repo *repository.TaskRepo, progressRepo *repository.Progress
 	}
 }
 
-// Create создает новую задачу
+// Create godoc
+// @Summary Создать новую задачу
+// @Description Создает новую задачу для текущего пользователя
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param request body TaskCreateRequest true "Данные для создания задачи"
+// @Success 200 {object} model.Task
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks [post]
 func (h *TaskHandler) Create(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	var task model.Task
-	if err := c.Bind(&task); err != nil {
+	var req TaskCreateRequest
+	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	task.UserID = userID
-	task.CreatedAt = time.Now()
+	task := model.Task{
+		UserID:      userID,
+		Title:       req.Title,
+		Description: req.Description,
+		DueDate:     req.DueDate,
+		IsDone:      false,
+		XPReward:    req.XPReward,
+		TagID:       req.TagID,
+		CreatedAt:   time.Now(),
+	}
 
 	if err := h.repo.Create(context.Background(), &task); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -48,7 +69,18 @@ func (h *TaskHandler) Create(c echo.Context) error {
 	return c.JSON(http.StatusOK, task)
 }
 
-// GetAll возвращает все задачи пользователя
+// GetAll godoc
+// @Summary Получить все задачи пользователя
+// @Description Возвращает список всех задач текущего пользователя
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {array} model.Task
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks [get]
 func (h *TaskHandler) GetAll(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -62,7 +94,21 @@ func (h *TaskHandler) GetAll(c echo.Context) error {
 	return c.JSON(http.StatusOK, tasks)
 }
 
-// GetByID возвращает задачу по ID
+// GetByID godoc
+// @Summary Получить задачу по ID
+// @Description Возвращает задачу по указанному ID
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Task ID"
+// @Success 200 {object} model.Task
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks/{id} [get]
 func (h *TaskHandler) GetByID(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -84,7 +130,22 @@ func (h *TaskHandler) GetByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, task)
 }
 
-// Update обновляет задачу
+// Update godoc
+// @Summary Обновить задачу
+// @Description Обновляет информацию о задаче
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Task ID"
+// @Param request body TaskUpdateRequest true "Обновленные данные задачи"
+// @Success 200 {object} model.Task
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks/{id} [put]
 func (h *TaskHandler) Update(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -96,13 +157,20 @@ func (h *TaskHandler) Update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid task ID"})
 	}
 
-	var task model.Task
-	if err := c.Bind(&task); err != nil {
+	var req TaskUpdateRequest
+	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	task.ID = id
-	task.UserID = userID
+	task := model.Task{
+		ID:          id,
+		UserID:      userID,
+		Title:       req.Title,
+		Description: req.Description,
+		DueDate:     req.DueDate,
+		XPReward:    req.XPReward,
+		TagID:       req.TagID,
+	}
 
 	if err := h.repo.Update(context.Background(), &task); err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -113,7 +181,21 @@ func (h *TaskHandler) Update(c echo.Context) error {
 	return c.JSON(http.StatusOK, task)
 }
 
-// Delete удаляет задачу
+// Delete godoc
+// @Summary Удалить задачу
+// @Description Удаляет задачу по ID
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Task ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks/{id} [delete]
 func (h *TaskHandler) Delete(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -136,7 +218,20 @@ func (h *TaskHandler) Delete(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-// GetByStatus возвращает задачи по статусу выполнения
+// GetByStatus godoc
+// @Summary Получить задачи по статусу
+// @Description Возвращает задачи по статусу выполнения (pending или completed)
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param status query string true "Статус задач (pending/completed)"
+// @Success 200 {array} model.Task
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks/status [get]
 func (h *TaskHandler) GetByStatus(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -162,7 +257,21 @@ func (h *TaskHandler) GetByStatus(c echo.Context) error {
 	return c.JSON(http.StatusOK, tasks)
 }
 
-// MarkAsDone помечает задачу как выполненную и создает запись в progress_log
+// MarkAsDone godoc
+// @Summary Пометить задачу как выполненную
+// @Description Помечает задачу как выполненную, добавляет опыт пользователю и создает запись в логе прогресса
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Task ID"
+// @Success 200 {object} TaskCompletionResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks/{id}/done [patch]
 func (h *TaskHandler) MarkAsDone(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -209,14 +318,28 @@ func (h *TaskHandler) MarkAsDone(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"message":   "Task completed successfully",
-		"xp_earned": task.XPReward,
-		"task_id":   id,
+	return c.JSON(http.StatusOK, TaskCompletionResponse{
+		Message:  "Task completed successfully",
+		XPEarned: task.XPReward,
+		TaskID:   id,
 	})
 }
 
-// MarkAsUndone помечает задачу как невыполненную
+// MarkAsUndone godoc
+// @Summary Пометить задачу как невыполненную
+// @Description Помечает задачу как невыполненную (сбрасывает статус)
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Task ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks/{id}/undone [patch]
 func (h *TaskHandler) MarkAsUndone(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -239,7 +362,18 @@ func (h *TaskHandler) MarkAsUndone(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-// GetOverdue возвращает просроченные задачи
+// GetOverdue godoc
+// @Summary Получить просроченные задачи
+// @Description Возвращает список просроченных задач (с истекшим сроком выполнения)
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {array} model.Task
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks/overdue [get]
 func (h *TaskHandler) GetOverdue(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -253,7 +387,20 @@ func (h *TaskHandler) GetOverdue(c echo.Context) error {
 	return c.JSON(http.StatusOK, tasks)
 }
 
-// GetByTag возвращает задачи по тегу
+// GetByTag godoc
+// @Summary Получить задачи по тегу
+// @Description Возвращает задачи, привязанные к определенному тегу
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param tagId path int true "Tag ID"
+// @Success 200 {array} model.Task
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks/tag/{tagId} [get]
 func (h *TaskHandler) GetByTag(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -270,4 +417,31 @@ func (h *TaskHandler) GetByTag(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, tasks)
+}
+
+// DTO для запросов
+
+// TaskCreateRequest представляет запрос на создание задачи
+type TaskCreateRequest struct {
+	Title       string     `json:"title" example:"Завершить проект"`
+	Description string     `json:"description" example:"Нужно завершить все задачи по проекту до конца недели"`
+	DueDate     *time.Time `json:"due_date,omitempty" example:"2024-01-15T00:00:00Z"`
+	XPReward    int        `json:"xp_reward" example:"100"`
+	TagID       *int       `json:"tag_id,omitempty" example:"1"`
+}
+
+// TaskUpdateRequest представляет запрос на обновление задачи
+type TaskUpdateRequest struct {
+	Title       string     `json:"title" example:"Завершить проект - обновлено"`
+	Description string     `json:"description" example:"Обновленное описание задачи"`
+	DueDate     *time.Time `json:"due_date,omitempty" example:"2024-01-20T00:00:00Z"`
+	XPReward    int        `json:"xp_reward" example:"150"`
+	TagID       *int       `json:"tag_id,omitempty" example:"2"`
+}
+
+// TaskCompletionResponse представляет ответ при завершении задачи
+type TaskCompletionResponse struct {
+	Message  string `json:"message" example:"Task completed successfully"`
+	XPEarned int    `json:"xp_earned" example:"100"`
+	TaskID   int    `json:"task_id" example:"123"`
 }

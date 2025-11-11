@@ -13,6 +13,6 @@ type UserSeed struct {
 type UserSeedWithDetails struct {
 	UserSeed
 	SeedName   string `json:"seed_name"`
-	SeedIcon   string `json:"seed_icon,omitempty"`
+	SeedIcon   string `json:"seed_icon"`
 	SeedRarity string `json:"seed_rarity"`
 }

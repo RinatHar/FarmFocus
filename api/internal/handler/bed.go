@@ -20,7 +20,18 @@ func NewBedHandler(repo *repository.BedRepo) *BedHandler {
 	return &BedHandler{repo: repo}
 }
 
-// GetUserBeds возвращает все грядки пользователя
+// GetUserBeds godoc
+// @Summary Получить все грядки пользователя
+// @Description Возвращает список всех грядок текущего пользователя
+// @Tags beds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {array} model.Bed
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /beds [get]
 func (h *BedHandler) GetUserBeds(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -34,7 +45,22 @@ func (h *BedHandler) GetUserBeds(c echo.Context) error {
 	return c.JSON(http.StatusOK, beds)
 }
 
-// GetBedByID возвращает грядку по ID
+// GetBedByID godoc
+// @Summary Получить грядку по ID
+// @Description Возвращает грядку по указанному ID
+// @Tags beds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Bed ID"
+// @Success 200 {object} model.Bed
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /beds/{id} [get]
 func (h *BedHandler) GetBedByID(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -62,7 +88,21 @@ func (h *BedHandler) GetBedByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, bed)
 }
 
-// GetBedByCellNumber возвращает грядку по номеру ячейки
+// GetBedByCellNumber godoc
+// @Summary Получить грядку по номеру ячейки
+// @Description Возвращает грядку по номеру ячейки для текущего пользователя
+// @Tags beds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param cellNumber path int true "Cell Number"
+// @Success 200 {object} model.Bed
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /beds/cell/{cellNumber} [get]
 func (h *BedHandler) GetBedByCellNumber(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -85,18 +125,27 @@ func (h *BedHandler) GetBedByCellNumber(c echo.Context) error {
 	return c.JSON(http.StatusOK, bed)
 }
 
-// CreateBed создает новую грядку
+// CreateBed godoc
+// @Summary Создать новую грядку
+// @Description Создает новую грядку для текущего пользователя
+// @Tags beds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param request body BedCreateRequest true "Данные для создания грядки"
+// @Success 200 {object} model.Bed
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /beds [post]
 func (h *BedHandler) CreateBed(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	var req struct {
-		CellNumber int  `json:"cell_number"`
-		IsLocked   bool `json:"is_locked"`
-	}
-
+	var req BedCreateRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
@@ -113,7 +162,22 @@ func (h *BedHandler) CreateBed(c echo.Context) error {
 	return c.JSON(http.StatusOK, bed)
 }
 
-// UnlockBed разблокирует грядку
+// UnlockBed godoc
+// @Summary Разблокировать грядку
+// @Description Разблокирует указанную грядку
+// @Tags beds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Bed ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /beds/{id}/unlock [post]
 func (h *BedHandler) UnlockBed(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -146,7 +210,22 @@ func (h *BedHandler) UnlockBed(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"message": "Bed unlocked successfully"})
 }
 
-// LockBed блокирует грядку
+// LockBed godoc
+// @Summary Заблокировать грядку
+// @Description Блокирует указанную грядку
+// @Tags beds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Bed ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /beds/{id}/lock [post]
 func (h *BedHandler) LockBed(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -179,7 +258,18 @@ func (h *BedHandler) LockBed(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"message": "Bed locked successfully"})
 }
 
-// GetAvailableBeds возвращает доступные (разблокированные) грядки
+// GetAvailableBeds godoc
+// @Summary Получить доступные грядки
+// @Description Возвращает список разблокированных грядок пользователя
+// @Tags beds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {array} model.Bed
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /beds/available [get]
 func (h *BedHandler) GetAvailableBeds(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -193,7 +283,18 @@ func (h *BedHandler) GetAvailableBeds(c echo.Context) error {
 	return c.JSON(http.StatusOK, beds)
 }
 
-// GetEmptyBeds возвращает пустые грядки
+// GetEmptyBeds godoc
+// @Summary Получить пустые грядки
+// @Description Возвращает список пустых грядок пользователя
+// @Tags beds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {array} model.Bed
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /beds/empty [get]
 func (h *BedHandler) GetEmptyBeds(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -207,7 +308,18 @@ func (h *BedHandler) GetEmptyBeds(c echo.Context) error {
 	return c.JSON(http.StatusOK, beds)
 }
 
-// GetBedsWithPlants возвращает грядки с информацией о растениях
+// GetBedsWithPlants godoc
+// @Summary Получить грядки с растениями
+// @Description Возвращает грядки с информацией о посаженных растениях
+// @Tags beds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Success 200 {array} model.BedWithUserPlant
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /beds/with-plants [get]
 func (h *BedHandler) GetBedsWithPlants(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
@@ -221,17 +333,27 @@ func (h *BedHandler) GetBedsWithPlants(c echo.Context) error {
 	return c.JSON(http.StatusOK, beds)
 }
 
-// CreateInitialBeds создает начальные грядки для пользователя
+// CreateInitialBeds godoc
+// @Summary Создать начальные грядки
+// @Description Создает начальный набор грядок для пользователя
+// @Tags beds
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param request body BedInitialRequest true "Данные для создания начальных грядок"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /beds/init [post]
 func (h *BedHandler) CreateInitialBeds(c echo.Context) error {
 	userID, err := h.GetUserIDFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	var req struct {
-		Count int `json:"count"`
-	}
-
+	var req BedInitialRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
@@ -246,4 +368,17 @@ func (h *BedHandler) CreateInitialBeds(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Initial beds created successfully"})
+}
+
+// DTO для запросов
+
+// BedCreateRequest представляет запрос на создание грядки
+type BedCreateRequest struct {
+	CellNumber int  `json:"cell_number" example:"1"`
+	IsLocked   bool `json:"is_locked" example:"false"`
+}
+
+// BedInitialRequest представляет запрос на создание начальных грядок
+type BedInitialRequest struct {
+	Count int `json:"count" example:"5"`
 }

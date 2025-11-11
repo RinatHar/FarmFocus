@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/RinatHar/FarmFocus/api/internal/context"
 	"github.com/labstack/echo/v4"
@@ -13,8 +14,15 @@ import (
 func AuthMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			// Пропускаем Swagger UI, health check и создание пользователя
+			path := c.Path()
+			if strings.HasPrefix(path, "/swagger") ||
+				path == "/health" ||
+				(path == "/users" && c.Request().Method == "POST") {
+				return next(c)
+			}
+
 			// Временное решение: получаем userID из заголовка
-			// В будущем будем получать из JWT токена
 			userIDHeader := c.Request().Header.Get("X-User-ID")
 
 			if userIDHeader == "" {
