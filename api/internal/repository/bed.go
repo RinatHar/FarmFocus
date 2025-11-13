@@ -203,7 +203,6 @@ func (r *BedRepo) GetWithPlants(ctx context.Context, userID int64) ([]model.BedW
 					SeedID:        *seedID,
 					BedID:         bed.ID,
 					CurrentGrowth: *currentGrowth,
-					// CreatedAt будет установлено ниже
 				},
 				SeedName:      *seedName,
 				SeedIcon:      getStringPtr(seedIcon),

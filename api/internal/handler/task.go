@@ -14,16 +14,22 @@ import (
 
 type TaskHandler struct {
 	BaseHandler
-	repo         *repository.TaskRepo
-	progressRepo *repository.ProgressLogRepo
-	userStatRepo *repository.UserStatRepo
+	repo          *repository.TaskRepo
+	progressRepo  *repository.ProgressLogRepo
+	userStatRepo  *repository.UserStatRepo
+	userPlantRepo *repository.UserPlantRepo
 }
 
-func NewTaskHandler(repo *repository.TaskRepo, progressRepo *repository.ProgressLogRepo, userStatRepo *repository.UserStatRepo) *TaskHandler {
+func NewTaskHandler(
+	repo *repository.TaskRepo,
+	progressRepo *repository.ProgressLogRepo,
+	userStatRepo *repository.UserStatRepo,
+	userPlantRepo *repository.UserPlantRepo) *TaskHandler {
 	return &TaskHandler{
-		repo:         repo,
-		progressRepo: progressRepo,
-		userStatRepo: userStatRepo,
+		repo:          repo,
+		progressRepo:  progressRepo,
+		userStatRepo:  userStatRepo,
+		userPlantRepo: userPlantRepo,
 	}
 }
 
@@ -259,7 +265,7 @@ func (h *TaskHandler) GetByStatus(c echo.Context) error {
 
 // MarkAsDone godoc
 // @Summary Пометить задачу как выполненную
-// @Description Помечает задачу как выполненную, добавляет опыт пользователю и создает запись в логе прогресса
+// @Description Помечает задачу как выполненную, добавляет опыт пользователю, создает запись в логе прогресса и увеличивает рост всех активных растений пользователя на 1
 // @Tags tasks
 // @Accept json
 // @Produce json
@@ -318,11 +324,42 @@ func (h *TaskHandler) MarkAsDone(c echo.Context) error {
 		}
 	}
 
+	// Увеличиваем рост всех активных растений пользователя на 1
+	plantsGrown, err := h.growUserPlants(context.Background(), userID, 1)
+	if err != nil {
+		// Логируем ошибку, но не прерываем выполнение основной операции
+		// В продакшене можно добавить proper logging
+		// log.Printf("Error growing plants for user %d: %v", userID, err)
+	}
+
 	return c.JSON(http.StatusOK, TaskCompletionResponse{
-		Message:  "Task completed successfully",
-		XPEarned: task.XPReward,
-		TaskID:   id,
+		Message:     "Task completed successfully",
+		XPEarned:    task.XPReward,
+		TaskID:      id,
+		PlantsGrown: plantsGrown,
 	})
+}
+
+// growUserPlants увеличивает рост всех активных растений пользователя
+func (h *TaskHandler) growUserPlants(ctx context.Context, userID int64, growthAmount int) (int, error) {
+	// Получаем все активные растения пользователя
+	userPlants, err := h.userPlantRepo.GetByUser(ctx, userID)
+	if err != nil {
+		return 0, err
+	}
+
+	grownCount := 0
+	for _, plant := range userPlants {
+		// Увеличиваем рост каждого растения
+		_, err := h.userPlantRepo.AddGrowth(ctx, plant.ID, growthAmount)
+		if err != nil {
+			// Продолжаем для других растений даже если одно не удалось
+			continue
+		}
+		grownCount++
+	}
+
+	return grownCount, nil
 }
 
 // MarkAsUndone godoc
@@ -441,7 +478,8 @@ type TaskUpdateRequest struct {
 
 // TaskCompletionResponse представляет ответ при завершении задачи
 type TaskCompletionResponse struct {
-	Message  string `json:"message" example:"Task completed successfully"`
-	XPEarned int    `json:"xp_earned" example:"100"`
-	TaskID   int    `json:"task_id" example:"123"`
+	Message     string `json:"message" example:"Task completed successfully"`
+	XPEarned    int    `json:"xp_earned" example:"100"`
+	TaskID      int    `json:"task_id" example:"123"`
+	PlantsGrown int    `json:"plants_grown" example:"3"`
 }

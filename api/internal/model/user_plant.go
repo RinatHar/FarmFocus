@@ -8,6 +8,7 @@ type UserPlant struct {
 	SeedID        int       `json:"seed_id"`
 	BedID         int       `json:"bed_id"`
 	CurrentGrowth int       `json:"current_growth"`
+	IsWithered    bool      `json:"is_withered"`
 	CreatedAt     time.Time `json:"created_at"`
 }
 
@@ -16,9 +17,10 @@ type UserPlantWithSeed struct {
 	SeedName      string `json:"seed_name"`
 	SeedIcon      string `json:"seed_icon,omitempty"`
 	TargetGrowth  int    `json:"target_growth"`
-	GoldReward    int    `json:"gold_reward"`
 	XPReward      int    `json:"xp_reward"`
+	GoldReward    int    `json:"gold_reward"`
 	GrowthPercent int    `json:"growth_percent"`
+	IsWithered    bool   `json:"is_withered"`
 }
 
 type UserPlantGrowthRequest struct {

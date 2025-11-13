@@ -15,6 +15,72 @@ definitions:
         example: 5
         type: integer
     type: object
+  handler.DailyStatus:
+    properties:
+      can_recover_plants:
+        type: boolean
+      has_completed_task_today:
+        type: boolean
+      missed_day:
+        type: boolean
+      plants_withered:
+        type: boolean
+    type: object
+  handler.LevelInfoResponse:
+    properties:
+      experience:
+        type: integer
+      experience_for_next_level:
+        type: integer
+      level:
+        type: integer
+      progress_percent:
+        type: number
+    type: object
+  handler.StreakInfo:
+    properties:
+      current_streak:
+        type: integer
+      longest_streak:
+        type: integer
+      missed_day:
+        type: boolean
+    type: object
+  handler.SyncDataResponse:
+    properties:
+      beds:
+        items:
+          $ref: '#/definitions/model.Bed'
+        type: array
+      daily_status:
+        $ref: '#/definitions/handler.DailyStatus'
+      inventory:
+        items:
+          $ref: '#/definitions/model.UserSeedWithDetails'
+        type: array
+      plants:
+        items:
+          $ref: '#/definitions/model.UserPlantWithSeed'
+        type: array
+      shop:
+        items:
+          $ref: '#/definitions/model.SeedWithUserData'
+        type: array
+      stats:
+        $ref: '#/definitions/handler.UserStatWithLevel'
+      streak_info:
+        $ref: '#/definitions/handler.StreakInfo'
+      tags:
+        items:
+          $ref: '#/definitions/model.Tag'
+        type: array
+      tasks:
+        items:
+          $ref: '#/definitions/model.Task'
+        type: array
+      user:
+        $ref: '#/definitions/model.User'
+    type: object
   handler.TagCreateRequest:
     properties:
       color:
@@ -38,6 +104,9 @@ definitions:
       message:
         example: Task completed successfully
         type: string
+      plants_grown:
+        example: 3
+        type: integer
       task_id:
         example: 123
         type: integer
@@ -144,6 +213,31 @@ definitions:
         example: Operation completed successfully
         type: string
     type: object
+  handler.UserStatWithLevel:
+    properties:
+      current_streak:
+        type: integer
+      experience:
+        type: integer
+      experience_for_next_level:
+        type: integer
+      gold:
+        type: integer
+      id:
+        type: integer
+      level:
+        type: integer
+      longest_streak:
+        type: integer
+      total_plant_harvested:
+        type: integer
+      total_tasks_completed:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
   handler.UserUpdateRequest:
     properties:
       username:
@@ -210,6 +304,33 @@ definitions:
       rarity:
         type: string
       target_growth:
+        type: integer
+      xp_reward:
+        type: integer
+    type: object
+  model.SeedWithUserData:
+    properties:
+      created_at:
+        type: string
+      gold_reward:
+        type: integer
+      icon:
+        type: string
+      id:
+        type: integer
+      is_owned:
+        type: boolean
+      level_required:
+        type: integer
+      modification:
+        type: number
+      name:
+        type: string
+      rarity:
+        type: string
+      target_growth:
+        type: integer
+      user_quantity:
         type: integer
       xp_reward:
         type: integer
@@ -294,6 +415,8 @@ definitions:
         type: integer
       id:
         type: integer
+      is_withered:
+        type: boolean
       seed_id:
         type: integer
       user_id:
@@ -316,6 +439,8 @@ definitions:
       id:
         type: integer
       is_ready:
+        type: boolean
+      is_withered:
         type: boolean
       seed_icon:
         type: string
@@ -346,6 +471,8 @@ definitions:
         type: integer
       id:
         type: integer
+      is_withered:
+        type: boolean
       seed_icon:
         type: string
       seed_id:
@@ -393,17 +520,19 @@ definitions:
     type: object
   model.UserStat:
     properties:
+      current_streak:
+        type: integer
       experience:
         type: integer
       gold:
         type: integer
       id:
         type: integer
-      streak:
+      longest_streak:
         type: integer
       total_plant_harvested:
         type: integer
-      total_task_completed:
+      total_tasks_completed:
         type: integer
       updated_at:
         type: string
@@ -1729,8 +1858,9 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Помечает задачу как выполненную, добавляет опыт пользователю и
-        создает запись в логе прогресса
+      description: Помечает задачу как выполненную, добавляет опыт пользователю, создает
+        запись в логе прогресса и увеличивает рост всех активных растений пользователя
+        на 1
       parameters:
       - description: User ID
         in: header
@@ -2894,6 +3024,29 @@ paths:
       summary: Добавить золото пользователю
       tags:
       - user-stats
+  /user-stats/level-info:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает текущий уровень, опыт и прогресс до следующего уровня
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.LevelInfoResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Получить информацию об уровне
+      tags:
+      - user-stats
   /user-stats/streak/increment:
     post:
       consumes:
@@ -3094,6 +3247,86 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Обновить данные пользователя
+      tags:
+      - users
+  /users/recover-plants:
+    post:
+      consumes:
+      - application/json
+      description: Восстанавливает засохшие растения после выполнения ежедневного
+        задания
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Восстановить засохшие растения
+      tags:
+      - users
+  /users/sync:
+    get:
+      consumes:
+      - application/json
+      description: 'Возвращает все данные пользователя для синхронизации: задачи,
+        теги, статистику, инвентарь, магазин, грядки, растения и информацию о стриках'
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SyncDataResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Синхронизировать все данные пользователя
       tags:
       - users
 schemes:

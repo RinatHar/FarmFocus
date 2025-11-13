@@ -2238,7 +2238,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Помечает задачу как выполненную, добавляет опыт пользователю и создает запись в логе прогресса",
+                "description": "Помечает задачу как выполненную, добавляет опыт пользователю, создает запись в логе прогресса и увеличивает рост всех активных растений пользователя на 1",
                 "consumes": [
                     "application/json"
                 ],
@@ -3825,6 +3825,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/user-stats/level-info": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Возвращает текущий уровень, опыт и прогресс до следующего уровня",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user-stats"
+                ],
+                "summary": "Получить информацию об уровне",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.LevelInfoResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/user-stats/streak/increment": {
             "post": {
                 "security": [
@@ -4136,6 +4173,128 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/users/recover-plants": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Восстанавливает засохшие растения после выполнения ежедневного задания",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Восстановить засохшие растения",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/sync": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Возвращает все данные пользователя для синхронизации: задачи, теги, статистику, инвентарь, магазин, грядки, растения и информацию о стриках",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Синхронизировать все данные пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.SyncDataResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -4158,6 +4317,107 @@ const docTemplate = `{
                 "count": {
                     "type": "integer",
                     "example": 5
+                }
+            }
+        },
+        "handler.DailyStatus": {
+            "type": "object",
+            "properties": {
+                "can_recover_plants": {
+                    "type": "boolean"
+                },
+                "has_completed_task_today": {
+                    "type": "boolean"
+                },
+                "missed_day": {
+                    "type": "boolean"
+                },
+                "plants_withered": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "handler.LevelInfoResponse": {
+            "type": "object",
+            "properties": {
+                "experience": {
+                    "type": "integer"
+                },
+                "experience_for_next_level": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "progress_percent": {
+                    "type": "number"
+                }
+            }
+        },
+        "handler.StreakInfo": {
+            "type": "object",
+            "properties": {
+                "current_streak": {
+                    "type": "integer"
+                },
+                "longest_streak": {
+                    "type": "integer"
+                },
+                "missed_day": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "handler.SyncDataResponse": {
+            "type": "object",
+            "properties": {
+                "beds": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Bed"
+                    }
+                },
+                "daily_status": {
+                    "$ref": "#/definitions/handler.DailyStatus"
+                },
+                "inventory": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.UserSeedWithDetails"
+                    }
+                },
+                "plants": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.UserPlantWithSeed"
+                    }
+                },
+                "shop": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SeedWithUserData"
+                    }
+                },
+                "stats": {
+                    "$ref": "#/definitions/handler.UserStatWithLevel"
+                },
+                "streak_info": {
+                    "$ref": "#/definitions/handler.StreakInfo"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Tag"
+                    }
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Task"
+                    }
+                },
+                "user": {
+                    "$ref": "#/definitions/model.User"
                 }
             }
         },
@@ -4193,6 +4453,10 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Task completed successfully"
+                },
+                "plants_grown": {
+                    "type": "integer",
+                    "example": 3
                 },
                 "task_id": {
                     "type": "integer",
@@ -4347,6 +4611,44 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.UserStatWithLevel": {
+            "type": "object",
+            "properties": {
+                "current_streak": {
+                    "type": "integer"
+                },
+                "experience": {
+                    "type": "integer"
+                },
+                "experience_for_next_level": {
+                    "type": "integer"
+                },
+                "gold": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "longest_streak": {
+                    "type": "integer"
+                },
+                "total_plant_harvested": {
+                    "type": "integer"
+                },
+                "total_tasks_completed": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "handler.UserUpdateRequest": {
             "type": "object",
             "properties": {
@@ -4447,6 +4749,47 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "target_growth": {
+                    "type": "integer"
+                },
+                "xp_reward": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.SeedWithUserData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "gold_reward": {
+                    "type": "integer"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_owned": {
+                    "type": "boolean"
+                },
+                "level_required": {
+                    "type": "integer"
+                },
+                "modification": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rarity": {
+                    "type": "string"
+                },
+                "target_growth": {
+                    "type": "integer"
+                },
+                "user_quantity": {
                     "type": "integer"
                 },
                 "xp_reward": {
@@ -4576,6 +4919,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "is_withered": {
+                    "type": "boolean"
+                },
                 "seed_id": {
                     "type": "integer"
                 },
@@ -4609,6 +4955,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "is_ready": {
+                    "type": "boolean"
+                },
+                "is_withered": {
                     "type": "boolean"
                 },
                 "seed_icon": {
@@ -4654,6 +5003,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "is_withered": {
+                    "type": "boolean"
                 },
                 "seed_icon": {
                     "type": "string"
@@ -4727,6 +5079,9 @@ const docTemplate = `{
         "model.UserStat": {
             "type": "object",
             "properties": {
+                "current_streak": {
+                    "type": "integer"
+                },
                 "experience": {
                     "type": "integer"
                 },
@@ -4736,13 +5091,13 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "streak": {
+                "longest_streak": {
                     "type": "integer"
                 },
                 "total_plant_harvested": {
                     "type": "integer"
                 },
-                "total_task_completed": {
+                "total_tasks_completed": {
                     "type": "integer"
                 },
                 "updated_at": {

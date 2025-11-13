@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/RinatHar/FarmFocus/api/internal/model"
 	"github.com/jackc/pgx/v5"
@@ -16,6 +17,18 @@ type TaskRepo struct {
 
 func NewTaskRepo(db *pgxpool.Pool) *TaskRepo {
 	return &TaskRepo{db: db}
+}
+
+func (r *TaskRepo) HasCompletedTaskToday(ctx context.Context, userID int64) (bool, error) {
+	today := time.Now().Format("2006-01-02")
+	query := `
+        SELECT EXISTS(
+            SELECT 1 FROM progress_log 
+            WHERE user_id = $1 AND DATE(created_at) = $2
+        )`
+	var exists bool
+	err := r.db.QueryRow(ctx, query, userID, today).Scan(&exists)
+	return exists, err
 }
 
 func (r *TaskRepo) Create(ctx context.Context, task *model.Task) error {

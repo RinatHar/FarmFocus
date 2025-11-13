@@ -176,15 +176,19 @@ func (r *UserSeedRepo) GetUserSeedsWithDetails(ctx context.Context, userID int64
 }
 
 func (r *UserSeedRepo) GetAvailableSeedsForUser(ctx context.Context, userID int64, userLevel int) ([]model.SeedWithUserData, error) {
+	if userLevel <= 0 {
+		userLevel = 1
+	}
+
 	query := `
-		SELECT s.id, s.name, s.icon, s.level_required, s.target_growth, s.rarity, 
-		       s.modification, s.gold_reward, s.xp_reward, s.created_at,
-		       COALESCE(us.quantity, 0) as user_quantity
-		FROM seed s
-		LEFT JOIN user_seed us ON s.id = us.seed_id AND us.user_id = $1
-		WHERE s.level_required <= $2
-		ORDER BY s.level_required, s.rarity DESC, s.name
-	`
+        SELECT s.id, s.name, s.icon, s.level_required, s.target_growth, s.rarity, 
+               s.modification, s.gold_reward, s.xp_reward, s.created_at,
+               COALESCE(us.quantity, 0) as user_quantity
+        FROM seed s
+        LEFT JOIN user_seed us ON s.id = us.seed_id AND us.user_id = $1
+        WHERE s.level_required <= $2
+        ORDER BY s.level_required, s.rarity DESC, s.name
+    `
 	rows, err := r.db.Query(ctx, query, userID, userLevel)
 	if err != nil {
 		return nil, err

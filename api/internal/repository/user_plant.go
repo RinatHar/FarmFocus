@@ -19,6 +19,24 @@ func NewUserPlantRepo(db *pgxpool.Pool) *UserPlantRepo {
 	return &UserPlantRepo{db: db}
 }
 
+func (r *UserPlantRepo) MarkPlantsAsWithered(ctx context.Context, userID int64) error {
+	query := `UPDATE user_plants SET is_withered = true WHERE user_id = $1 AND is_withered = false`
+	_, err := r.db.Exec(ctx, query, userID)
+	return err
+}
+
+func (r *UserPlantRepo) RemoveWitheredPlants(ctx context.Context, userID int64) error {
+	query := `DELETE FROM user_plants WHERE user_id = $1 AND is_withered = true`
+	_, err := r.db.Exec(ctx, query, userID)
+	return err
+}
+
+func (r *UserPlantRepo) ResetWitheredStatus(ctx context.Context, userID int64) error {
+	query := `UPDATE user_plants SET is_withered = false WHERE user_id = $1`
+	_, err := r.db.Exec(ctx, query, userID)
+	return err
+}
+
 func (r *UserPlantRepo) Create(ctx context.Context, plant *model.UserPlant) error {
 	query := `
 		INSERT INTO user_plant (user_id, seed_id, bed_id, current_growth, created_at)

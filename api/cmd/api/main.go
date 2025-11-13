@@ -38,7 +38,32 @@ func main() {
 	e := echo.New()
 
 	// CORS middleware
-	// e.Use(middleware.CORSMiddleware())
+	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+		AllowOrigins: []string{
+			"http://192.168.0.2:5006",
+			"http://10.155.36.67:5006",
+			"http://localhost:3000",
+			"http://localhost:5006",
+			"*",
+		},
+		AllowMethods: []string{
+			echo.GET,
+			echo.POST,
+			echo.PUT,
+			echo.DELETE,
+			echo.PATCH,
+			echo.OPTIONS,
+		},
+		AllowHeaders: []string{
+			echo.HeaderOrigin,
+			echo.HeaderContentType,
+			echo.HeaderAccept,
+			echo.HeaderAuthorization,
+			"X-User-ID", // ваш кастомный заголовок
+		},
+		AllowCredentials: true,
+		MaxAge:           86400,
+	}))
 
 	// Middleware
 	e.Use(echoMiddleware.Logger())
@@ -71,9 +96,18 @@ func main() {
 	userPlantRepo := repository.NewUserPlantRepo(dbpool)
 
 	// Инициализация всех хендлеров
-	userHandler := handler.NewUserHandler(userRepo, userStatRepo, bedRepo)
+	userHandler := handler.NewUserHandler(
+		userRepo,
+		userStatRepo,
+		bedRepo,
+		taskRepo,
+		tagRepo,
+		seedRepo,
+		userSeedRepo,
+		userPlantRepo,
+	)
 	userStatHandler := handler.NewUserStatHandler(userStatRepo)
-	taskHandler := handler.NewTaskHandler(taskRepo, progressLogRepo, userStatRepo)
+	taskHandler := handler.NewTaskHandler(taskRepo, progressLogRepo, userStatRepo, userPlantRepo)
 	tagHandler := handler.NewTagHandler(tagRepo)
 	seedHandler := handler.NewSeedHandler(seedRepo)
 	userSeedHandler := handler.NewUserSeedHandler(userSeedRepo)
@@ -108,10 +142,13 @@ func setupRoutes(
 	u.GET("/me", userHandler.GetCurrentUser)
 	u.POST("", userHandler.CreateOrUpdateUser)
 	u.PUT("/me", userHandler.UpdateUser)
+	u.GET("/sync", userHandler.SyncUserData)
+	u.POST("/recover-plants", userHandler.RecoverPlants)
 
 	// UserStat routes
 	us := e.Group("/user-stats")
 	us.GET("", userStatHandler.GetUserStats)
+	us.GET("/level-info", userStatHandler.GetLevelInfo)
 	us.POST("/experience", userStatHandler.AddExperience)
 	us.POST("/gold", userStatHandler.AddGold)
 	us.POST("/streak/increment", userStatHandler.IncrementStreak)

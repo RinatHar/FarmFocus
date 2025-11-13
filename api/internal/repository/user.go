@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/RinatHar/FarmFocus/api/internal/model"
 	"github.com/jackc/pgx/v5"
@@ -16,6 +17,16 @@ type UserRepo struct {
 
 func NewUserRepo(db *pgxpool.Pool) *UserRepo {
 	return &UserRepo{db: db}
+}
+
+func (r *UserRepo) GetLastLogin(ctx context.Context, userID int64) (*time.Time, error) {
+	var lastLogin *time.Time
+	query := `SELECT last_login FROM user_info WHERE id = $1`
+	err := r.db.QueryRow(ctx, query, userID).Scan(&lastLogin)
+	if err != nil {
+		return nil, err
+	}
+	return lastLogin, nil
 }
 
 func (r *UserRepo) Create(ctx context.Context, user *model.User) error {

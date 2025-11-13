@@ -16,9 +16,10 @@ CREATE TABLE IF NOT EXISTS user_stat (
     user_id BIGINT NOT NULL REFERENCES user_info(id) ON DELETE CASCADE UNIQUE,
     experience BIGINT DEFAULT 0,
     gold BIGINT DEFAULT 0,
-    streak INT DEFAULT 0,
+    current_streak INTEGER DEFAULT 0,
+    longest_streak INTEGER DEFAULT 0,
     total_plant_harvested BIGINT DEFAULT 0,
-    total_task_completed BIGINT DEFAULT 0,
+    total_tasks_completed BIGINT DEFAULT 0,
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -99,6 +100,7 @@ CREATE TABLE IF NOT EXISTS user_plant (
     seed_id INT NOT NULL REFERENCES seed(id),
     bed_id INT NOT NULL REFERENCES bed(id),
     current_growth INT DEFAULT 0,
+    is_withered BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW(),
     UNIQUE(bed_id) -- Одно растение на грядку
 );
@@ -122,9 +124,15 @@ CREATE INDEX IF NOT EXISTS idx_user_plant_user_id ON user_plant(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_plant_seed_id ON user_plant(seed_id);
 CREATE INDEX IF NOT EXISTS idx_user_plant_bed_id ON user_plant(bed_id);
 
+-- Дополнительные индексы для новых полей
+CREATE INDEX IF NOT EXISTS idx_user_plant_withered ON user_plant(user_id, is_withered);
+CREATE INDEX IF NOT EXISTS idx_progress_log_user_date ON progress_log(user_id, created_at);
+
 -- +goose Down
 
 -- Удаление индексов
+DROP INDEX IF EXISTS idx_progress_log_user_date;
+DROP INDEX IF EXISTS idx_user_plant_withered;
 DROP INDEX IF EXISTS idx_user_plant_bed_id;
 DROP INDEX IF EXISTS idx_user_plant_seed_id;
 DROP INDEX IF EXISTS idx_user_plant_user_id;
