@@ -269,3 +269,34 @@ func getStringPtr(s *string) string {
 	}
 	return ""
 }
+
+func (r *BedRepo) GetAll(ctx context.Context) ([]model.Bed, error) {
+	query := `
+		SELECT id, user_id, cell_number, is_locked, created_at
+		FROM bed
+		ORDER BY cell_number
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	beds := []model.Bed{}
+	for rows.Next() {
+		var bed model.Bed
+		err := rows.Scan(
+			&bed.ID,
+			&bed.UserID,
+			&bed.CellNumber,
+			&bed.IsLocked,
+			&bed.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		beds = append(beds, bed)
+	}
+	return beds, nil
+}

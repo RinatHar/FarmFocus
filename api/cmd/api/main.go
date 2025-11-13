@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	_ "github.com/RinatHar/FarmFocus/api/docs" // важно: импорт сгенерированной документации
 	"github.com/RinatHar/FarmFocus/api/internal/config"
 	"github.com/RinatHar/FarmFocus/api/internal/handler"
 	"github.com/RinatHar/FarmFocus/api/internal/middleware"
 	"github.com/RinatHar/FarmFocus/api/internal/repository"
+	"github.com/RinatHar/FarmFocus/api/internal/scheduler"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
@@ -88,12 +90,42 @@ func main() {
 	userRepo := repository.NewUserRepo(dbpool)
 	userStatRepo := repository.NewUserStatRepo(dbpool)
 	taskRepo := repository.NewTaskRepo(dbpool)
+	habitRepo := repository.NewHabitRepo(dbpool)
 	tagRepo := repository.NewTagRepo(dbpool)
 	seedRepo := repository.NewSeedRepo(dbpool)
 	userSeedRepo := repository.NewUserSeedRepo(dbpool)
 	progressLogRepo := repository.NewProgressLogRepo(dbpool)
 	bedRepo := repository.NewBedRepo(dbpool)
 	userPlantRepo := repository.NewUserPlantRepo(dbpool)
+	goodRepo := repository.NewGoodRepo(dbpool)
+
+	// Создаем планировщики
+	droughtScheduler := scheduler.NewDroughtScheduler(
+		taskRepo,
+		habitRepo,
+		userPlantRepo,
+		userRepo,
+		24*time.Hour, // Проверка раз в день
+	)
+
+	habitResetScheduler := scheduler.NewHabitResetScheduler(
+		habitRepo,
+		userRepo,
+		24*time.Hour, // Сброс раз в день
+	)
+
+	shopRefreshScheduler := scheduler.NewShopRefreshScheduler(
+		goodRepo,
+		seedRepo,
+		bedRepo,
+		userRepo,
+		24*time.Hour, // Обновление магазина раз в день
+	)
+
+	// Запускаем планировщики
+	droughtScheduler.Start()
+	habitResetScheduler.Start()
+	shopRefreshScheduler.Start()
 
 	// Инициализация всех хендлеров
 	userHandler := handler.NewUserHandler(
@@ -101,13 +133,17 @@ func main() {
 		userStatRepo,
 		bedRepo,
 		taskRepo,
+		habitRepo,
 		tagRepo,
 		seedRepo,
 		userSeedRepo,
 		userPlantRepo,
+		goodRepo,
+		progressLogRepo,
 	)
 	userStatHandler := handler.NewUserStatHandler(userStatRepo)
 	taskHandler := handler.NewTaskHandler(taskRepo, progressLogRepo, userStatRepo, userPlantRepo)
+	habitHandler := handler.NewHabitHandler(habitRepo, progressLogRepo, userStatRepo, userPlantRepo)
 	tagHandler := handler.NewTagHandler(tagRepo)
 	seedHandler := handler.NewSeedHandler(seedRepo)
 	userSeedHandler := handler.NewUserSeedHandler(userSeedRepo)
@@ -119,9 +155,10 @@ func main() {
 		bedRepo,
 		seedRepo,
 	)
+	goodHandler := handler.NewGoodHandler(goodRepo)
 
 	// Routes
-	setupRoutes(e, userHandler, userStatHandler, taskHandler, tagHandler, seedHandler, userSeedHandler, bedHandler, userPlantHandler)
+	setupRoutes(e, userHandler, userStatHandler, taskHandler, habitHandler, tagHandler, seedHandler, userSeedHandler, bedHandler, userPlantHandler, goodHandler)
 
 	e.Logger.Fatal(e.Start(":" + cfg.Port))
 }
@@ -131,11 +168,13 @@ func setupRoutes(
 	userHandler *handler.UserHandler,
 	userStatHandler *handler.UserStatHandler,
 	taskHandler *handler.TaskHandler,
+	habitHandler *handler.HabitHandler,
 	tagHandler *handler.TagHandler,
 	seedHandler *handler.SeedHandler,
 	userSeedHandler *handler.UserSeedHandler,
 	bedHandler *handler.BedHandler,
 	userPlantHandler *handler.UserPlantHandler,
+	goodHandler *handler.GoodHandler,
 ) {
 	// User routes
 	u := e.Group("/users")
@@ -154,18 +193,37 @@ func setupRoutes(
 	us.POST("/streak/increment", userStatHandler.IncrementStreak)
 	us.POST("/streak/reset", userStatHandler.ResetStreak)
 
+	goodGroup := e.Group("/goods")
+	goodGroup.GET("", goodHandler.GetUserGoods)
+	goodGroup.GET("/type/:type", goodHandler.GetUserGoodsByType)
+	goodGroup.POST("", goodHandler.CreateGood)
+	goodGroup.PUT("/:id/quantity", goodHandler.UpdateGoodQuantity)
+	goodGroup.PUT("/:id/cost", goodHandler.UpdateGoodCost)
+	goodGroup.DELETE("/:id", goodHandler.DeleteGood)
+	goodGroup.POST("/batch", goodHandler.CreateBatchGoods)
+	goodGroup.PATCH("/:id/add-quantity", goodHandler.AddQuantity)
+
 	// Task routes
-	t := e.Group("/tasks")
-	t.GET("", taskHandler.GetAll)
-	t.GET("/:id", taskHandler.GetByID)
-	t.POST("", taskHandler.Create)
-	t.PUT("/:id", taskHandler.Update)
-	t.DELETE("/:id", taskHandler.Delete)
-	t.GET("/status", taskHandler.GetByStatus)
-	t.GET("/overdue", taskHandler.GetOverdue)
-	t.PATCH("/:id/done", taskHandler.MarkAsDone)
-	t.PATCH("/:id/undone", taskHandler.MarkAsUndone)
-	t.GET("/tag/:tagId", taskHandler.GetByTag)
+	taskGroup := e.Group("/tasks")
+	taskGroup.POST("", taskHandler.Create)
+	taskGroup.GET("", taskHandler.GetAll)
+	taskGroup.GET("/:id", taskHandler.GetByID)
+	taskGroup.PUT("/:id", taskHandler.Update)
+	taskGroup.DELETE("/:id", taskHandler.Delete)
+	taskGroup.PATCH("/:id/done", taskHandler.MarkAsDone)
+	taskGroup.PATCH("/:id/undone", taskHandler.MarkAsUndone)
+
+	// Habit routes
+	habitGroup := e.Group("/habits")
+	habitGroup.POST("", habitHandler.Create)
+	habitGroup.GET("", habitHandler.GetAll)
+	habitGroup.GET("/:id", habitHandler.GetByID)
+	habitGroup.PUT("/:id", habitHandler.Update)
+	habitGroup.DELETE("/:id", habitHandler.Delete)
+	habitGroup.PATCH("/:id/done", habitHandler.MarkAsDone)
+	habitGroup.PATCH("/:id/undone", habitHandler.MarkAsUndone)
+	habitGroup.PATCH("/:id/increment", habitHandler.IncrementCount)
+	habitGroup.PATCH("/:id/reset", habitHandler.ResetCount)
 
 	// Tag routes
 	tg := e.Group("/tags")

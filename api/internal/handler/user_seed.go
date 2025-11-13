@@ -291,7 +291,7 @@ func (h *UserSeedHandler) GetSeedCount(c echo.Context) error {
 
 // UserSeedAddRequest представляет запрос на добавление семян
 type UserSeedAddRequest struct {
-	SeedID   int   `json:"seed_id" example:"1"`
+	SeedID   int   `json:"seedId" example:"1"`
 	Quantity int64 `json:"quantity" example:"5"`
 }
 
@@ -302,5 +302,5 @@ type UserSeedQuantityRequest struct {
 
 // UserSeedCountResponse представляет ответ с количеством семян
 type UserSeedCountResponse struct {
-	TotalSeeds int `json:"total_seeds" example:"15"`
+	TotalSeeds int `json:"totalSeeds" example:"15"`
 }

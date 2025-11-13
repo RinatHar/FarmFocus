@@ -4,32 +4,32 @@ import "time"
 
 type UserPlant struct {
 	ID            int       `json:"id"`
-	UserID        int64     `json:"user_id"`
-	SeedID        int       `json:"seed_id"`
-	BedID         int       `json:"bed_id"`
-	CurrentGrowth int       `json:"current_growth"`
-	IsWithered    bool      `json:"is_withered"`
-	CreatedAt     time.Time `json:"created_at"`
+	UserID        int64     `json:"userId"`
+	SeedID        int       `json:"seedId"`
+	BedID         int       `json:"bedId"`
+	CurrentGrowth int       `json:"currentGrowth"`
+	IsWithered    bool      `json:"isWithered"`
+	CreatedAt     time.Time `json:"createdAt"`
 }
 
 type UserPlantWithSeed struct {
 	UserPlant
-	SeedName      string `json:"seed_name"`
-	SeedIcon      string `json:"seed_icon,omitempty"`
-	TargetGrowth  int    `json:"target_growth"`
-	XPReward      int    `json:"xp_reward"`
-	GoldReward    int    `json:"gold_reward"`
-	GrowthPercent int    `json:"growth_percent"`
-	IsWithered    bool   `json:"is_withered"`
+	SeedName      string `json:"seedName"`
+	SeedIcon      string `json:"seedIcon,omitempty"`
+	TargetGrowth  int    `json:"targetGrowth"`
+	XPReward      int    `json:"xpReward"`
+	GoldReward    int    `json:"goldReward"`
+	GrowthPercent int    `json:"growthPercent"`
+	IsWithered    bool   `json:"isWithered"`
 }
 
 type UserPlantGrowthRequest struct {
-	GrowthAmount int `json:"growth_amount"`
+	GrowthAmount int `json:"growthAmount"`
 }
 
 type UserPlantHarvestResult struct {
 	UserPlantWithSeed
-	GoldEarned int  `json:"gold_earned"`
-	XPEarned   int  `json:"xp_earned"`
-	IsReady    bool `json:"is_ready"`
+	GoldEarned int  `json:"goldEarned"`
+	XPEarned   int  `json:"xpEarned"`
+	IsReady    bool `json:"isReady"`
 }

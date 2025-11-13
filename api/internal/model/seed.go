@@ -6,25 +6,25 @@ type Seed struct {
 	ID            int       `json:"id"`
 	Name          string    `json:"name"`
 	Icon          string    `json:"icon,omitempty"`
-	LevelRequired int       `json:"level_required"`
-	TargetGrowth  int       `json:"target_growth"`
+	LevelRequired int       `json:"levelRequired"`
+	TargetGrowth  int       `json:"targetGrowth"`
 	Rarity        string    `json:"rarity"`
 	Modification  float64   `json:"modification"`
-	GoldReward    int       `json:"gold_reward"`
-	XPReward      int       `json:"xp_reward"`
-	CreatedAt     time.Time `json:"created_at"`
+	GoldReward    int       `json:"goldReward"`
+	XPReward      int       `json:"xpReward"`
+	CreatedAt     time.Time `json:"createdAt"`
 }
 
 type SeedWithUserData struct {
 	Seed
-	UserQuantity int64 `json:"user_quantity,omitempty"`
-	IsOwned      bool  `json:"is_owned"`
+	UserQuantity int64 `json:"userQuantity,omitempty"`
+	IsOwned      bool  `json:"isOwned"`
 }
 
 type AvailableSeed struct {
-	SeedID     int    `json:"seed_id"`
-	SeedName   string `json:"seed_name"`
+	SeedID     int    `json:"seedId"`
+	SeedName   string `json:"seedName"`
 	Level      int    `json:"level"`
 	Rarity     string `json:"rarity"`
-	UserAmount int64  `json:"user_amount"`
+	UserAmount int64  `json:"userAmount"`
 }

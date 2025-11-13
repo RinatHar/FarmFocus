@@ -4,13 +4,13 @@ import "time"
 
 type Bed struct {
 	ID         int       `json:"id"`
-	UserID     int64     `json:"user_id"`
-	CellNumber int       `json:"cell_number"`
-	IsLocked   bool      `json:"is_locked"`
-	CreatedAt  time.Time `json:"created_at"`
+	UserID     int64     `json:"userId"`
+	CellNumber int       `json:"cellNumber"`
+	IsLocked   bool      `json:"isLocked"`
+	CreatedAt  time.Time `json:"createdAt"`
 }
 
 type BedWithUserPlant struct {
 	Bed
-	UserPlant *UserPlantWithSeed `json:"user_plant,omitempty"`
+	UserPlant *UserPlantWithSeed `json:"userPlant,omitempty"`
 }

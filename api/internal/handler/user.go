@@ -17,10 +17,13 @@ type UserHandler struct {
 	statRepo      *repository.UserStatRepo
 	bedRepo       *repository.BedRepo
 	taskRepo      *repository.TaskRepo
+	habitRepo     *repository.HabitRepo
 	tagRepo       *repository.TagRepo
 	seedRepo      *repository.SeedRepo
 	userSeedRepo  *repository.UserSeedRepo
 	userPlantRepo *repository.UserPlantRepo
+	goodRepo      *repository.GoodRepo
+	progressRepo  *repository.ProgressLogRepo
 }
 
 func NewUserHandler(
@@ -28,20 +31,26 @@ func NewUserHandler(
 	statRepo *repository.UserStatRepo,
 	bedRepo *repository.BedRepo,
 	taskRepo *repository.TaskRepo,
+	habitRepo *repository.HabitRepo,
 	tagRepo *repository.TagRepo,
 	seedRepo *repository.SeedRepo,
 	userSeedRepo *repository.UserSeedRepo,
 	userPlantRepo *repository.UserPlantRepo,
+	goodRepo *repository.GoodRepo,
+	progressRepo *repository.ProgressLogRepo,
 ) *UserHandler {
 	return &UserHandler{
 		repo:          repo,
 		statRepo:      statRepo,
 		bedRepo:       bedRepo,
 		taskRepo:      taskRepo,
+		habitRepo:     habitRepo,
 		tagRepo:       tagRepo,
 		seedRepo:      seedRepo,
 		userSeedRepo:  userSeedRepo,
 		userPlantRepo: userPlantRepo,
+		goodRepo:      goodRepo,
+		progressRepo:  progressRepo,
 	}
 }
 
@@ -67,7 +76,7 @@ func (h *UserHandler) RecoverPlants(c echo.Context) error {
 	ctx := context.Background()
 
 	// Проверяем, выполнено ли сегодня задание
-	hasCompletedToday, err := h.taskRepo.HasCompletedTaskToday(ctx, userID)
+	hasCompletedToday, err := h.progressRepo.HasUserCompletedTaskToday(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -88,30 +97,15 @@ func (h *UserHandler) RecoverPlants(c echo.Context) error {
 	})
 }
 
-// StreakInfo представляет информацию о стрике
-type StreakInfo struct {
-	CurrentStreak int  `json:"current_streak"`
-	LongestStreak int  `json:"longest_streak"`
-	MissedDay     bool `json:"missed_day"`
-}
-
-// DailyStatus представляет статус ежедневной активности
-type DailyStatus struct {
-	HasCompletedTaskToday bool `json:"has_completed_task_today"`
-	MissedDay             bool `json:"missed_day"`
-	PlantsWithered        bool `json:"plants_withered"`
-	CanRecoverPlants      bool `json:"can_recover_plants"`
-}
-
 // SyncUserData godoc
 // @Summary Синхронизировать все данные пользователя
-// @Description Возвращает все данные пользователя для синхронизации: задачи, теги, статистику, инвентарь, магазин, грядки, растения и информацию о стриках
+// @Description Возвращает все данные пользователя для синхронизации в формате ServerFarmData
 // @Tags users
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Param X-User-ID header string true "User ID"
-// @Success 200 {object} SyncDataResponse
+// @Success 200 {object} ServerFarmData
 // @Failure 401 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /users/sync [get]
@@ -123,14 +117,20 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 
 	ctx := context.Background()
 
-	// Получаем базовые данные пользователя
-	user, err := h.repo.GetByID(ctx, userID)
+	// Получаем статистику пользователя
+	stats, err := h.statRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Получаем статистику
-	stats, err := h.statRepo.GetByUserID(ctx, userID)
+	// Проверяем, выполнял ли пользователь задачи сегодня
+	didTaskToday, err := h.progressRepo.HasUserCompletedTaskToday(ctx, userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Проверяем засуху (есть ли невыполненные задачи за вчера)
+	isDrought, err := h.checkDroughtStatus(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -141,131 +141,156 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
+	// Получаем все привычки пользователя
+	habits, err := h.habitRepo.GetAll(ctx, userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
 	// Получаем все теги пользователя
 	tags, err := h.tagRepo.GetByUser(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Получаем инвентарь (семена пользователя с деталями)
-	inventory, err := h.userSeedRepo.GetUserSeedsWithDetails(ctx, userID)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-
-	// Получаем магазин (все доступные семена)
-	userLevel := stats.Level() // Используем вычисляемый уровень
-	shop, err := h.userSeedRepo.GetAvailableSeedsForUser(ctx, userID, userLevel)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-
-	// Получаем грядки
+	// Получаем грядки (field)
 	beds, err := h.bedRepo.GetByUser(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Получаем растения с деталями
+	// Получаем семена из инвентаря
+	inventorySeeds, err := h.userSeedRepo.GetUserSeedsWithDetails(ctx, userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Получаем товары из магазина
+	shopStorage, err := h.goodRepo.GetByUser(ctx, userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Получаем растения на грядках для seeds (SeedStorage)
 	plants, err := h.userPlantRepo.GetWithSeedDetails(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Проверяем ежедневный статус и обрабатываем логику засыхания растений
-	dailyStatus, err := h.processDailyLogic(ctx, userID, user, stats)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	// Преобразуем растения в формат IPlant для грядок
+	plantMap := make(map[int]IPlant)
+	for _, plant := range plants {
+		plantMap[plant.BedID] = IPlant{
+			ID:           plant.ID,
+			Name:         plant.SeedName,
+			CurrentStage: plant.CurrentGrowth,
+			FinalStage:   plant.TargetGrowth,
+			ImgPath:      plant.SeedIcon,
+		}
 	}
 
-	// Формируем информацию о стрике
-	streakInfo := StreakInfo{
-		CurrentStreak: stats.CurrentStreak,
-		LongestStreak: stats.LongestStreak,
-		MissedDay:     dailyStatus.MissedDay,
+	// Формируем грядки с растениями
+	field := make([]IBed, len(beds))
+	for i, bed := range beds {
+		var plant *IPlant
+		if p, exists := plantMap[bed.ID]; exists {
+			plant = &p
+		}
+
+		field[i] = IBed{
+			ID:     bed.ID,
+			Plant:  plant,
+			IsLock: bed.IsLocked,
+		}
 	}
 
-	// Создаем статистику с вычисляемым уровнем
-	statsWithLevel := &UserStatWithLevel{
-		UserStat:               stats,
-		Level:                  stats.Level(),
-		ExperienceForNextLevel: stats.ExperienceForNextLevel(),
+	// Преобразуем растения в формат SeedStorage для seeds
+	seeds := make([]SeedStorage, len(plants))
+	for i, plant := range plants {
+		seeds[i] = SeedStorage{
+			ID:            plant.ID,
+			SeedID:        plant.SeedID,
+			CurrentGrowth: plant.CurrentGrowth,
+			IsWithered:    plant.IsWithered,
+			BedID:         plant.BedID,
+			CreatedAt:     plant.CreatedAt,
+			// Добавляем детали семени
+			SeedName:     plant.SeedName,
+			TargetGrowth: plant.TargetGrowth,
+			Icon:         plant.SeedIcon,
+		}
 	}
 
-	// В response используем statsWithLevel
-	response := SyncDataResponse{
-		User:        user,
-		Stats:       statsWithLevel,
-		Tasks:       tasks,
-		Tags:        tags,
-		Inventory:   inventory,
-		Shop:        shop,
-		Beds:        beds,
-		Plants:      plants,
-		StreakInfo:  streakInfo,
-		DailyStatus: dailyStatus,
+	// Формируем ответ в нужном формате
+	response := ServerFarmData{
+		CurrentXp:      int(stats.Experience),
+		Coins:          int(stats.Gold),
+		Strick:         stats.CurrentStreak,
+		DidTaskToday:   didTaskToday,
+		IsDrought:      isDrought,
+		Tasks:          tasks,
+		Habits:         habits,
+		Tags:           tags,
+		Field:          field,
+		Seeds:          seeds,
+		InventorySeeds: inventorySeeds,
+		ShopStorage:    shopStorage,
 	}
 
 	return c.JSON(http.StatusOK, response)
 }
 
-// processDailyLogic обрабатывает ежедневную логику: пропущенные дни и засыхание растений
-func (h *UserHandler) processDailyLogic(ctx context.Context, userID int64, user *model.User, stats *model.UserStat) (DailyStatus, error) {
-	dailyStatus := DailyStatus{}
+// checkDroughtStatus проверяет статус засухи для пользователя
+func (h *UserHandler) checkDroughtStatus(ctx context.Context, userID int64) (bool, error) {
+	yesterday := time.Now().AddDate(0, 0, -1)
 
-	// Получаем последний логин
-	lastLogin, err := h.repo.GetLastLogin(ctx, userID)
+	// Получаем задачи за вчера
+	tasks, err := h.taskRepo.GetByDate(ctx, userID, yesterday)
 	if err != nil {
-		return dailyStatus, err
+		return false, err
 	}
 
-	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-
-	// Проверяем, был ли сегодня выполнен таск
-	hasCompletedToday, err := h.taskRepo.HasCompletedTaskToday(ctx, userID)
-	if err != nil {
-		return dailyStatus, err
-	}
-	dailyStatus.HasCompletedTaskToday = hasCompletedToday
-
-	// Если пользователь зашел впервые сегодня
-	if lastLogin == nil || lastLogin.Before(today) {
-		// Обновляем last_login
-		user.LastLogin = &now
-		if err := h.repo.Update(ctx, user); err != nil {
-			return dailyStatus, err
-		}
-
-		// Проверяем, пропустил ли пользователь вчера
-		if lastLogin != nil {
-			yesterday := today.AddDate(0, 0, -1)
-			lastLoginDay := time.Date(lastLogin.Year(), lastLogin.Month(), lastLogin.Day(), 0, 0, 0, 0, lastLogin.Location())
-
-			// Если последний логин был позавчера или раньше - пропущен день
-			if lastLoginDay.Before(yesterday) {
-				dailyStatus.MissedDay = true
-
-				// Помечаем растения как засохшие
-				if err := h.userPlantRepo.MarkPlantsAsWithered(ctx, userID); err != nil {
-					return dailyStatus, err
-				}
-				dailyStatus.PlantsWithered = true
-
-				// Сбрасываем стрик
-				if err := h.statRepo.ResetStreak(ctx, userID); err != nil {
-					return dailyStatus, err
-				}
-			}
+	// Проверяем невыполненные задачи
+	for _, task := range tasks {
+		if !task.Done {
+			return true, nil
 		}
 	}
 
-	// Если растения засохли, но пользователь выполнил задание сегодня - можно восстановить
-	if dailyStatus.PlantsWithered && dailyStatus.HasCompletedTaskToday {
-		dailyStatus.CanRecoverPlants = true
+	// Проверяем привычки за вчера
+	habits, err := h.habitRepo.GetAll(ctx, userID)
+	if err != nil {
+		return false, err
 	}
 
-	return dailyStatus, nil
+	for _, habit := range habits {
+		if h.shouldHabitBeCompletedYesterday(habit, yesterday) && !habit.Done {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// shouldHabitBeCompletedYesterday проверяет, должна ли привычка быть выполнена вчера
+func (h *UserHandler) shouldHabitBeCompletedYesterday(habit model.Habit, yesterday time.Time) bool {
+	// Для ежедневных привычек - должны выполняться каждый день
+	if habit.Period == "day" {
+		return true
+	}
+
+	// Для еженедельных - если вчера был день выполнения
+	if habit.Period == "week" {
+		daysSinceStart := int(yesterday.Sub(habit.StartDate).Hours() / 24)
+		return daysSinceStart%7 == 0
+	}
+
+	// Для ежемесячных - если вчера был день месяца
+	if habit.Period == "month" {
+		return yesterday.Day() == habit.StartDate.Day()
+	}
+
+	return false
 }
 
 // GetCurrentUser godoc
@@ -418,51 +443,11 @@ func (h *UserHandler) UpdateUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
-// internal/handler/user_stat_handler.go
-// GetLevelInfo godoc
-// @Summary Получить информацию об уровне
-// @Description Возвращает текущий уровень, опыт и прогресс до следующего уровня
-// @Tags user-stats
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Param X-User-ID header string true "User ID"
-// @Success 200 {object} LevelInfoResponse
-// @Router /user-stats/level-info [get]
-func (h *UserStatHandler) GetLevelInfo(c echo.Context) error {
-	userID, err := h.GetUserIDFromContext(c)
-	if err != nil {
-		return err
-	}
-
-	stats, err := h.repo.GetByUserID(context.Background(), userID)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-
-	response := LevelInfoResponse{
-		Level:                  stats.Level(),
-		Experience:             stats.Experience,
-		ExperienceForNextLevel: stats.ExperienceForNextLevel(),
-		ProgressPercent:        float64(stats.Experience) / float64(stats.Level()*100) * 100,
-	}
-
-	return c.JSON(http.StatusOK, response)
-}
-
-// LevelInfoResponse представляет информацию об уровне
-type LevelInfoResponse struct {
-	Level                  int     `json:"level"`
-	Experience             int64   `json:"experience"`
-	ExperienceForNextLevel int64   `json:"experience_for_next_level"`
-	ProgressPercent        float64 `json:"progress_percent"`
-}
-
 // DTO для запросов
 
 // UserCreateRequest представляет запрос на создание/обновление пользователя
 type UserCreateRequest struct {
-	MaxID    int64  `json:"max_id" example:"123456789"`
+	MaxID    int64  `json:"maxId" example:"123456789"`
 	Username string `json:"username" example:"john_doe"`
 }
 
@@ -471,23 +456,48 @@ type UserUpdateRequest struct {
 	Username string `json:"username" example:"john_doe_updated"`
 }
 
-// UserStatWithLevel представляет статистику с вычисляемым уровнем
-type UserStatWithLevel struct {
-	*model.UserStat
-	Level                  int   `json:"level"`
-	ExperienceForNextLevel int64 `json:"experience_for_next_level"`
+// IPlant представляет растение на грядке
+type IPlant struct {
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	CurrentStage int    `json:"currentStage"`
+	FinalStage   int    `json:"FinalStage"`
+	ImgPath      string `json:"imgPath"`
 }
 
-// SyncDataResponse обновите:
-type SyncDataResponse struct {
-	User        *model.User                 `json:"user"`
-	Stats       *UserStatWithLevel          `json:"stats"`
-	Tasks       []model.Task                `json:"tasks"`
-	Tags        []model.Tag                 `json:"tags"`
-	Inventory   []model.UserSeedWithDetails `json:"inventory"`
-	Shop        []model.SeedWithUserData    `json:"shop"`
-	Beds        []model.Bed                 `json:"beds"`
-	Plants      []model.UserPlantWithSeed   `json:"plants"`
-	StreakInfo  StreakInfo                  `json:"streak_info"`
-	DailyStatus DailyStatus                 `json:"daily_status"`
+// IBed представляет грядку с растением
+type IBed struct {
+	ID     int     `json:"id"`
+	Plant  *IPlant `json:"plant"`
+	IsLock bool    `json:"isLock"`
+}
+
+// ServerFarmData основной формат ответа для синхронизации
+type ServerFarmData struct {
+	CurrentXp      int                         `json:"currentXp"`
+	Coins          int                         `json:"coins"`
+	Strick         int                         `json:"strick"`
+	DidTaskToday   bool                        `json:"didTaskToday"`
+	IsDrought      bool                        `json:"isDrought"`
+	Tasks          []model.Task                `json:"tasks"`
+	Habits         []model.Habit               `json:"habits"`
+	Tags           []model.Tag                 `json:"tags"`
+	Field          []IBed                      `json:"field"`
+	Seeds          []SeedStorage               `json:"seeds"`
+	InventorySeeds []model.UserSeedWithDetails `json:"inventorySeeds"`
+	ShopStorage    []model.Good                `json:"shopStorage"`
+}
+
+// SeedStorage представляет растение на грядке (для отдельного списка)
+type SeedStorage struct {
+	ID            int       `json:"id"`
+	SeedID        int       `json:"seedId"`
+	CurrentGrowth int       `json:"currentGrowth"`
+	IsWithered    bool      `json:"isWithered"`
+	BedID         int       `json:"bedId"`
+	CreatedAt     time.Time `json:"createdAt"`
+	// Дополнительные поля из семени
+	SeedName     string `json:"seedName,omitempty"`
+	TargetGrowth int    `json:"targetGrowth,omitempty"`
+	Icon         string `json:"icon,omitempty"`
 }

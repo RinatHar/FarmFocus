@@ -753,6 +753,1344 @@
                 }
             }
         },
+        "/goods": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Возвращает список всех товаров текущего пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "goods"
+                ],
+                "summary": "Получить товары пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Good"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Создает новый товар для пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "goods"
+                ],
+                "summary": "Создать товар",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные товара",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.CreateGoodRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Good"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/goods/batch": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Создает несколько товаров для пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "goods"
+                ],
+                "summary": "Создать несколько товаров",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Массив товаров",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handler.CreateGoodRequest"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Good"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/goods/type/{type}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Возвращает товары указанного типа для текущего пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "goods"
+                ],
+                "summary": "Получить товары пользователя по типу",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Good Type (seed/bed/tool/fertilizer)",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Good"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/goods/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Удаляет товар по ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "goods"
+                ],
+                "summary": "Удалить товар",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Good ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/goods/{id}/add-quantity": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Добавляет указанное количество к существующему товару",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "goods"
+                ],
+                "summary": "Добавить количество товара",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Good ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Количество для добавления",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.AddQuantityRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Good"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/goods/{id}/cost": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Обновляет цену товара по ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "goods"
+                ],
+                "summary": "Обновить цену товара",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Good ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Новая цена",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.UpdateCostRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Good"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/goods/{id}/quantity": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Обновляет количество товара по ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "goods"
+                ],
+                "summary": "Обновить количество товара",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Good ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Новое количество",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.UpdateQuantityRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Good"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/habits": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Возвращает список всех привычек текущего пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "habits"
+                ],
+                "summary": "Получить все привычки пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Фильтр по статусу выполнения",
+                        "name": "done",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по периоду (day/week/month)",
+                        "name": "period",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Фильтр по ID тега",
+                        "name": "tag_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Habit"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Создает новую привычку для текущего пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "habits"
+                ],
+                "summary": "Создать новую привычку",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные для создания привычки",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.HabitCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Habit"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/habits/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Возвращает привычку по указанному ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "habits"
+                ],
+                "summary": "Получить привычку по ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Habit ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Habit"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Обновляет информацию о привычке",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "habits"
+                ],
+                "summary": "Обновить привычку",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Habit ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Обновленные данные привычки",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.HabitUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Habit"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Удаляет привычку по ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "habits"
+                ],
+                "summary": "Удалить привычку",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Habit ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/habits/{id}/done": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Помечает привычку как выполненную, добавляет опыт пользователю, создает запись в логе прогресса и увеличивает рост всех активных растений пользователя на 1",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "habits"
+                ],
+                "summary": "Пометить привычку как выполненную",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Habit ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.HabitCompletionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/habits/{id}/increment": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Увеличивает счетчик привычки на 1",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "habits"
+                ],
+                "summary": "Увеличить счетчик привычки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Habit ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/habits/{id}/reset": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Сбрасывает счетчик привычки до 0",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "habits"
+                ],
+                "summary": "Сбросить счетчик привычки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Habit ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/habits/{id}/undone": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Помечает привычку как невыполненную (сбрасывает статус)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "habits"
+                ],
+                "summary": "Пометить привычку как невыполненную",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Habit ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/seeds": {
             "get": {
                 "description": "Возвращает полный список всех доступных семян",
@@ -1676,6 +3014,24 @@
                         "name": "X-User-ID",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Фильтр по статусу выполнения",
+                        "name": "done",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по дате (формат: 2006-01-02)",
+                        "name": "date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Фильтр по ID тега",
+                        "name": "tag_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1748,212 +3104,6 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.Task"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/tasks/overdue": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Возвращает список просроченных задач (с истекшим сроком выполнения)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tasks"
-                ],
-                "summary": "Получить просроченные задачи",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "X-User-ID",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.Task"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/tasks/status": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Возвращает задачи по статусу выполнения (pending или completed)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tasks"
-                ],
-                "summary": "Получить задачи по статусу",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "X-User-ID",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Статус задач (pending/completed)",
-                        "name": "status",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.Task"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/tasks/tag/{tagId}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Возвращает задачи, привязанные к определенному тегу",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tasks"
-                ],
-                "summary": "Получить задачи по тегу",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "X-User-ID",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Tag ID",
-                        "name": "tagId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.Task"
-                            }
                         }
                     },
                     "400": {
@@ -3855,6 +5005,33 @@
                         "schema": {
                             "$ref": "#/definitions/handler.LevelInfoResponse"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -4245,7 +5422,7 @@
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Возвращает все данные пользователя для синхронизации: задачи, теги, статистику, инвентарь, магазин, грядки, растения и информацию о стриках",
+                "description": "Возвращает все данные пользователя для синхронизации в формате ServerFarmData",
                 "consumes": [
                     "application/json"
                 ],
@@ -4269,7 +5446,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.SyncDataResponse"
+                            "$ref": "#/definitions/handler.ServerFarmData"
                         }
                     },
                     "401": {
@@ -4295,14 +5472,26 @@
         }
     },
     "definitions": {
+        "handler.AddQuantityRequest": {
+            "type": "object",
+            "required": [
+                "amount"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
         "handler.BedCreateRequest": {
             "type": "object",
             "properties": {
-                "cell_number": {
+                "cellNumber": {
                     "type": "integer",
                     "example": 1
                 },
-                "is_locked": {
+                "isLocked": {
                     "type": "boolean",
                     "example": false
                 }
@@ -4317,20 +5506,169 @@
                 }
             }
         },
-        "handler.DailyStatus": {
+        "handler.CreateGoodRequest": {
+            "type": "object",
+            "required": [
+                "cost",
+                "idGood",
+                "type"
+            ],
+            "properties": {
+                "cost": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "idGood": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.HabitCompletionResponse": {
             "type": "object",
             "properties": {
-                "can_recover_plants": {
+                "habitId": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Habit completed successfully"
+                },
+                "plantsGrown": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "xpEarned": {
+                    "type": "integer",
+                    "example": 50
+                }
+            }
+        },
+        "handler.HabitCreateRequest": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Ежедневная утренняя зарядка 15 минут"
+                },
+                "difficulty": {
+                    "type": "string",
+                    "example": "medium"
+                },
+                "every": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "period": {
+                    "type": "string",
+                    "example": "day"
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2024-01-15T00:00:00Z"
+                },
+                "tagId": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Утренняя зарядка"
+                },
+                "xpReward": {
+                    "type": "integer",
+                    "example": 50
+                }
+            }
+        },
+        "handler.HabitUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Обновленное описание привычки"
+                },
+                "difficulty": {
+                    "type": "string",
+                    "example": "hard"
+                },
+                "done": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "every": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "period": {
+                    "type": "string",
+                    "example": "week"
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2024-01-20T00:00:00Z"
+                },
+                "tagId": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Утренняя зарядка - обновлено"
+                },
+                "xpReward": {
+                    "type": "integer",
+                    "example": 75
+                }
+            }
+        },
+        "handler.IBed": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "isLock": {
                     "type": "boolean"
                 },
-                "has_completed_task_today": {
-                    "type": "boolean"
+                "plant": {
+                    "$ref": "#/definitions/handler.IPlant"
+                }
+            }
+        },
+        "handler.IPlant": {
+            "type": "object",
+            "properties": {
+                "FinalStage": {
+                    "type": "integer"
                 },
-                "missed_day": {
-                    "type": "boolean"
+                "currentStage": {
+                    "type": "integer"
                 },
-                "plants_withered": {
-                    "type": "boolean"
+                "id": {
+                    "type": "integer"
+                },
+                "imgPath": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },
@@ -4340,66 +5678,97 @@
                 "experience": {
                     "type": "integer"
                 },
-                "experience_for_next_level": {
+                "experienceForNextLevel": {
                     "type": "integer"
                 },
                 "level": {
                     "type": "integer"
                 },
-                "progress_percent": {
+                "progressPercent": {
                     "type": "number"
                 }
             }
         },
-        "handler.StreakInfo": {
+        "handler.SeedStorage": {
             "type": "object",
             "properties": {
-                "current_streak": {
+                "bedId": {
                     "type": "integer"
                 },
-                "longest_streak": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "currentGrowth": {
                     "type": "integer"
                 },
-                "missed_day": {
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isWithered": {
                     "type": "boolean"
+                },
+                "seedId": {
+                    "type": "integer"
+                },
+                "seedName": {
+                    "description": "Дополнительные поля из семени",
+                    "type": "string"
+                },
+                "targetGrowth": {
+                    "type": "integer"
                 }
             }
         },
-        "handler.SyncDataResponse": {
+        "handler.ServerFarmData": {
             "type": "object",
             "properties": {
-                "beds": {
+                "coins": {
+                    "type": "integer"
+                },
+                "currentXp": {
+                    "type": "integer"
+                },
+                "didTaskToday": {
+                    "type": "boolean"
+                },
+                "field": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.Bed"
+                        "$ref": "#/definitions/handler.IBed"
                     }
                 },
-                "daily_status": {
-                    "$ref": "#/definitions/handler.DailyStatus"
+                "habits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Habit"
+                    }
                 },
-                "inventory": {
+                "inventorySeeds": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.UserSeedWithDetails"
                     }
                 },
-                "plants": {
+                "isDrought": {
+                    "type": "boolean"
+                },
+                "seeds": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.UserPlantWithSeed"
+                        "$ref": "#/definitions/handler.SeedStorage"
                     }
                 },
-                "shop": {
+                "shopStorage": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.SeedWithUserData"
+                        "$ref": "#/definitions/model.Good"
                     }
                 },
-                "stats": {
-                    "$ref": "#/definitions/handler.UserStatWithLevel"
-                },
-                "streak_info": {
-                    "$ref": "#/definitions/handler.StreakInfo"
+                "strick": {
+                    "type": "integer"
                 },
                 "tags": {
                     "type": "array",
@@ -4412,9 +5781,6 @@
                     "items": {
                         "$ref": "#/definitions/model.Task"
                     }
-                },
-                "user": {
-                    "$ref": "#/definitions/model.User"
                 }
             }
         },
@@ -4468,15 +5834,19 @@
         "handler.TaskCreateRequest": {
             "type": "object",
             "properties": {
+                "date": {
+                    "type": "string",
+                    "example": "2024-01-15T00:00:00Z"
+                },
                 "description": {
                     "type": "string",
                     "example": "Нужно завершить все задачи по проекту до конца недели"
                 },
-                "due_date": {
+                "difficulty": {
                     "type": "string",
-                    "example": "2024-01-15T00:00:00Z"
+                    "example": "medium"
                 },
-                "tag_id": {
+                "tagId": {
                     "type": "integer",
                     "example": 1
                 },
@@ -4484,7 +5854,7 @@
                     "type": "string",
                     "example": "Завершить проект"
                 },
-                "xp_reward": {
+                "xpReward": {
                     "type": "integer",
                     "example": 100
                 }
@@ -4493,15 +5863,23 @@
         "handler.TaskUpdateRequest": {
             "type": "object",
             "properties": {
+                "date": {
+                    "type": "string",
+                    "example": "2024-01-20T00:00:00Z"
+                },
                 "description": {
                     "type": "string",
                     "example": "Обновленное описание задачи"
                 },
-                "due_date": {
+                "difficulty": {
                     "type": "string",
-                    "example": "2024-01-20T00:00:00Z"
+                    "example": "hard"
                 },
-                "tag_id": {
+                "done": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "tagId": {
                     "type": "integer",
                     "example": 2
                 },
@@ -4509,16 +5887,40 @@
                     "type": "string",
                     "example": "Завершить проект - обновлено"
                 },
-                "xp_reward": {
+                "xpReward": {
                     "type": "integer",
                     "example": 150
+                }
+            }
+        },
+        "handler.UpdateCostRequest": {
+            "type": "object",
+            "required": [
+                "cost"
+            ],
+            "properties": {
+                "cost": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "handler.UpdateQuantityRequest": {
+            "type": "object",
+            "required": [
+                "quantity"
+            ],
+            "properties": {
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
         "handler.UserCreateRequest": {
             "type": "object",
             "properties": {
-                "max_id": {
+                "maxId": {
                     "type": "integer",
                     "example": 123456789
                 },
@@ -4531,11 +5933,11 @@
         "handler.UserPlantCreateRequest": {
             "type": "object",
             "properties": {
-                "bed_id": {
+                "bedId": {
                     "type": "integer",
                     "example": 1
                 },
-                "seed_id": {
+                "seedId": {
                     "type": "integer",
                     "example": 1
                 }
@@ -4544,7 +5946,7 @@
         "handler.UserPlantGrowthRequest": {
             "type": "object",
             "properties": {
-                "growth_amount": {
+                "growthAmount": {
                     "type": "integer",
                     "example": 10
                 }
@@ -4553,7 +5955,7 @@
         "handler.UserPlantGrowthResponse": {
             "type": "object",
             "properties": {
-                "new_growth": {
+                "newGrowth": {
                     "type": "integer",
                     "example": 50
                 }
@@ -4566,7 +5968,7 @@
                     "type": "integer",
                     "example": 5
                 },
-                "seed_id": {
+                "seedId": {
                     "type": "integer",
                     "example": 1
                 }
@@ -4575,7 +5977,7 @@
         "handler.UserSeedCountResponse": {
             "type": "object",
             "properties": {
-                "total_seeds": {
+                "totalSeeds": {
                     "type": "integer",
                     "example": 15
                 }
@@ -4608,44 +6010,6 @@
                 }
             }
         },
-        "handler.UserStatWithLevel": {
-            "type": "object",
-            "properties": {
-                "current_streak": {
-                    "type": "integer"
-                },
-                "experience": {
-                    "type": "integer"
-                },
-                "experience_for_next_level": {
-                    "type": "integer"
-                },
-                "gold": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "level": {
-                    "type": "integer"
-                },
-                "longest_streak": {
-                    "type": "integer"
-                },
-                "total_plant_harvested": {
-                    "type": "integer"
-                },
-                "total_tasks_completed": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
         "handler.UserUpdateRequest": {
             "type": "object",
             "properties": {
@@ -4664,13 +6028,13 @@
                 "rarity": {
                     "type": "string"
                 },
-                "seed_id": {
+                "seedId": {
                     "type": "integer"
                 },
-                "seed_name": {
+                "seedName": {
                     "type": "string"
                 },
-                "user_amount": {
+                "userAmount": {
                     "type": "integer"
                 }
             }
@@ -4678,19 +6042,19 @@
         "model.Bed": {
             "type": "object",
             "properties": {
-                "cell_number": {
+                "cellNumber": {
                     "type": "integer"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "is_locked": {
+                "isLocked": {
                     "type": "boolean"
                 },
-                "user_id": {
+                "userId": {
                     "type": "integer"
                 }
             }
@@ -4698,33 +6062,110 @@
         "model.BedWithUserPlant": {
             "type": "object",
             "properties": {
-                "cell_number": {
+                "cellNumber": {
                     "type": "integer"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "is_locked": {
+                "isLocked": {
                     "type": "boolean"
                 },
-                "user_id": {
+                "userId": {
                     "type": "integer"
                 },
-                "user_plant": {
+                "userPlant": {
                     "$ref": "#/definitions/model.UserPlantWithSeed"
+                }
+            }
+        },
+        "model.Good": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "idGood": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "type": {
+                    "description": "'seed', 'bed'",
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.Habit": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "type": "string"
+                },
+                "done": {
+                    "type": "boolean"
+                },
+                "every": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "period": {
+                    "type": "string"
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "tag": {
+                    "$ref": "#/definitions/model.Tag"
+                },
+                "tagId": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                },
+                "xpReward": {
+                    "type": "integer"
                 }
             }
         },
         "model.Seed": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
-                "gold_reward": {
+                "goldReward": {
                     "type": "integer"
                 },
                 "icon": {
@@ -4733,7 +6174,7 @@
                 "id": {
                     "type": "integer"
                 },
-                "level_required": {
+                "levelRequired": {
                     "type": "integer"
                 },
                 "modification": {
@@ -4745,51 +6186,10 @@
                 "rarity": {
                     "type": "string"
                 },
-                "target_growth": {
+                "targetGrowth": {
                     "type": "integer"
                 },
-                "xp_reward": {
-                    "type": "integer"
-                }
-            }
-        },
-        "model.SeedWithUserData": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "gold_reward": {
-                    "type": "integer"
-                },
-                "icon": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_owned": {
-                    "type": "boolean"
-                },
-                "level_required": {
-                    "type": "integer"
-                },
-                "modification": {
-                    "type": "number"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "rarity": {
-                    "type": "string"
-                },
-                "target_growth": {
-                    "type": "integer"
-                },
-                "user_quantity": {
-                    "type": "integer"
-                },
-                "xp_reward": {
+                "xpReward": {
                     "type": "integer"
                 }
             }
@@ -4800,7 +6200,7 @@
                 "color": {
                     "type": "string"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "id": {
@@ -4809,7 +6209,7 @@
                 "name": {
                     "type": "string"
                 },
-                "user_id": {
+                "userid": {
                     "type": "integer"
                 }
             }
@@ -4820,7 +6220,7 @@
                 "color": {
                     "type": "string"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "id": {
@@ -4832,7 +6232,7 @@
                 "task_count": {
                     "type": "integer"
                 },
-                "user_id": {
+                "userid": {
                     "type": "integer"
                 }
             }
@@ -4840,7 +6240,10 @@
         "model.Task": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "date": {
                     "type": "string"
                 },
                 "description": {
@@ -4849,31 +6252,25 @@
                 "difficulty": {
                     "type": "string"
                 },
-                "due_date": {
-                    "type": "string"
+                "done": {
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "is_done": {
-                    "type": "boolean"
+                "tag": {
+                    "$ref": "#/definitions/model.Tag"
                 },
-                "repeat_interval": {
-                    "type": "string"
-                },
-                "tag_id": {
+                "tagId": {
                     "type": "integer"
                 },
                 "title": {
                     "type": "string"
                 },
-                "type": {
-                    "type": "string"
-                },
-                "user_id": {
+                "userId": {
                     "type": "integer"
                 },
-                "xp_reward": {
+                "xpReward": {
                     "type": "integer"
                 }
             }
@@ -4881,19 +6278,19 @@
         "model.User": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "is_active": {
+                "isActive": {
                     "type": "boolean"
                 },
-                "last_login": {
+                "lastLogin": {
                     "type": "string"
                 },
-                "max_id": {
+                "maxId": {
                     "type": "integer"
                 },
                 "username": {
@@ -4904,25 +6301,25 @@
         "model.UserPlant": {
             "type": "object",
             "properties": {
-                "bed_id": {
+                "bedId": {
                     "type": "integer"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
-                "current_growth": {
+                "currentGrowth": {
                     "type": "integer"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "is_withered": {
+                "isWithered": {
                     "type": "boolean"
                 },
-                "seed_id": {
+                "seedId": {
                     "type": "integer"
                 },
-                "user_id": {
+                "userId": {
                     "type": "integer"
                 }
             }
@@ -4930,52 +6327,52 @@
         "model.UserPlantHarvestResult": {
             "type": "object",
             "properties": {
-                "bed_id": {
+                "bedId": {
                     "type": "integer"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
-                "current_growth": {
+                "currentGrowth": {
                     "type": "integer"
                 },
-                "gold_earned": {
+                "goldEarned": {
                     "type": "integer"
                 },
-                "gold_reward": {
+                "goldReward": {
                     "type": "integer"
                 },
-                "growth_percent": {
+                "growthPercent": {
                     "type": "integer"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "is_ready": {
+                "isReady": {
                     "type": "boolean"
                 },
-                "is_withered": {
+                "isWithered": {
                     "type": "boolean"
                 },
-                "seed_icon": {
+                "seedIcon": {
                     "type": "string"
                 },
-                "seed_id": {
+                "seedId": {
                     "type": "integer"
                 },
-                "seed_name": {
+                "seedName": {
                     "type": "string"
                 },
-                "target_growth": {
+                "targetGrowth": {
                     "type": "integer"
                 },
-                "user_id": {
+                "userId": {
                     "type": "integer"
                 },
-                "xp_earned": {
+                "xpEarned": {
                     "type": "integer"
                 },
-                "xp_reward": {
+                "xpReward": {
                     "type": "integer"
                 }
             }
@@ -4983,43 +6380,43 @@
         "model.UserPlantWithSeed": {
             "type": "object",
             "properties": {
-                "bed_id": {
+                "bedId": {
                     "type": "integer"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
-                "current_growth": {
+                "currentGrowth": {
                     "type": "integer"
                 },
-                "gold_reward": {
+                "goldReward": {
                     "type": "integer"
                 },
-                "growth_percent": {
+                "growthPercent": {
                     "type": "integer"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "is_withered": {
+                "isWithered": {
                     "type": "boolean"
                 },
-                "seed_icon": {
+                "seedIcon": {
                     "type": "string"
                 },
-                "seed_id": {
+                "seedId": {
                     "type": "integer"
                 },
-                "seed_name": {
+                "seedName": {
                     "type": "string"
                 },
-                "target_growth": {
+                "targetGrowth": {
                     "type": "integer"
                 },
-                "user_id": {
+                "userId": {
                     "type": "integer"
                 },
-                "xp_reward": {
+                "xpReward": {
                     "type": "integer"
                 }
             }
@@ -5027,7 +6424,7 @@
         "model.UserSeed": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "id": {
@@ -5036,10 +6433,10 @@
                 "quantity": {
                     "type": "integer"
                 },
-                "seed_id": {
+                "seedId": {
                     "type": "integer"
                 },
-                "user_id": {
+                "userId": {
                     "type": "integer"
                 }
             }
@@ -5047,7 +6444,7 @@
         "model.UserSeedWithDetails": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "id": {
@@ -5056,19 +6453,19 @@
                 "quantity": {
                     "type": "integer"
                 },
-                "seed_icon": {
+                "seedIcon": {
                     "type": "string"
                 },
-                "seed_id": {
+                "seedId": {
                     "type": "integer"
                 },
-                "seed_name": {
+                "seedName": {
                     "type": "string"
                 },
-                "seed_rarity": {
+                "seedRarity": {
                     "type": "string"
                 },
-                "user_id": {
+                "userId": {
                     "type": "integer"
                 }
             }
@@ -5076,7 +6473,7 @@
         "model.UserStat": {
             "type": "object",
             "properties": {
-                "current_streak": {
+                "currentStreak": {
                     "type": "integer"
                 },
                 "experience": {
@@ -5088,19 +6485,19 @@
                 "id": {
                     "type": "integer"
                 },
-                "longest_streak": {
+                "longestStreak": {
                     "type": "integer"
                 },
-                "total_plant_harvested": {
+                "totalPlantHarvested": {
                     "type": "integer"
                 },
-                "total_tasks_completed": {
+                "totalTasksCompleted": {
                     "type": "integer"
                 },
-                "updated_at": {
+                "updatedAt": {
                     "type": "string"
                 },
-                "user_id": {
+                "userId": {
                     "type": "integer"
                 }
             }

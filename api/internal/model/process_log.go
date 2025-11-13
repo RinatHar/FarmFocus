@@ -4,15 +4,17 @@ import "time"
 
 type ProgressLog struct {
 	ID         int       `json:"id"`
-	UserID     int64     `json:"user_id"`
-	TaskID     int       `json:"task_id"`
-	XPEarned   int       `json:"xp_earned"`
-	GoldEarned int       `json:"gold_earned"`
-	CreatedAt  time.Time `json:"created_at"`
+	UserID     int64     `json:"userId"`
+	TaskID     *int      `json:"taskId,omitempty"`
+	HabitID    *int      `json:"habitId,omitempty"`
+	XPEarned   int       `json:"xpEarned"`
+	GoldEarned int       `json:"goldEarned"`
+	CreatedAt  time.Time `json:"createdAt"`
 }
 
-type ProgressLogWithTask struct {
+type ProgressLogWithDetails struct {
 	ProgressLog
-	TaskTitle string `json:"task_title"`
-	TaskType  string `json:"task_type"`
+	TaskTitle  *string `json:"taskTitle,omitempty"`
+	HabitTitle *string `json:"habitTitle,omitempty"`
+	Type       string  `json:"type"` // "task" или "habit"
 }

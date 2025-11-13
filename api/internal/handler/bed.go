@@ -374,8 +374,8 @@ func (h *BedHandler) CreateInitialBeds(c echo.Context) error {
 
 // BedCreateRequest представляет запрос на создание грядки
 type BedCreateRequest struct {
-	CellNumber int  `json:"cell_number" example:"1"`
-	IsLocked   bool `json:"is_locked" example:"false"`
+	CellNumber int  `json:"cellNumber" example:"1"`
+	IsLocked   bool `json:"isLocked" example:"false"`
 }
 
 // BedInitialRequest представляет запрос на создание начальных грядок

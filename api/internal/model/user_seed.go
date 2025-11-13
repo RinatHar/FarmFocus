@@ -4,15 +4,15 @@ import "time"
 
 type UserSeed struct {
 	ID        int       `json:"id"`
-	UserID    int64     `json:"user_id"`
-	SeedID    int       `json:"seed_id"`
+	UserID    int64     `json:"userId"`
+	SeedID    int       `json:"seedId"`
 	Quantity  int64     `json:"quantity"`
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type UserSeedWithDetails struct {
 	UserSeed
-	SeedName   string `json:"seed_name"`
-	SeedIcon   string `json:"seed_icon"`
-	SeedRarity string `json:"seed_rarity"`
+	SeedName   string `json:"seedName"`
+	SeedIcon   string `json:"seedIcon"`
+	SeedRarity string `json:"seedRarity"`
 }

@@ -4,14 +4,14 @@ import "time"
 
 type UserStat struct {
 	ID                  int64     `json:"id"`
-	UserID              int64     `json:"user_id"`
+	UserID              int64     `json:"userId"`
 	Experience          int64     `json:"experience"`
 	Gold                int64     `json:"gold"`
-	CurrentStreak       int       `json:"current_streak"`
-	LongestStreak       int       `json:"longest_streak"`
-	TotalTasksCompleted int       `json:"total_tasks_completed"`
-	TotalPlantHarvested int       `json:"total_plant_harvested"`
-	UpdatedAt           time.Time `json:"updated_at"`
+	CurrentStreak       int       `json:"currentStreak"`
+	LongestStreak       int       `json:"longestStreak"`
+	TotalTasksCompleted int       `json:"totalTasksCompleted"`
+	TotalPlantHarvested int       `json:"totalPlantHarvested"`
+	UpdatedAt           time.Time `json:"updatedAt"`
 }
 
 // Level вычисляет уровень на основе опыта

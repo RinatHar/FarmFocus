@@ -113,3 +113,35 @@ func (r *UserRepo) Delete(ctx context.Context, id int64) error {
 
 	return nil
 }
+
+func (r *UserRepo) GetAllActiveUsers(ctx context.Context) ([]model.User, error) {
+	query := `
+		SELECT id, max_id, username, created_at, last_login, is_active 
+		FROM user_info 
+		WHERE is_active = true
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	users := []model.User{}
+	for rows.Next() {
+		var user model.User
+		err := rows.Scan(
+			&user.ID,
+			&user.MaxID,
+			&user.Username,
+			&user.CreatedAt,
+			&user.LastLogin,
+			&user.IsActive,
+		)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
+}

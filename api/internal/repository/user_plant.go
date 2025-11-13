@@ -265,3 +265,19 @@ func (r *UserPlantRepo) GetGrowingPlants(ctx context.Context, userID int64) ([]m
 	}
 	return plants, nil
 }
+
+func (r *UserPlantRepo) MarkAsWithered(ctx context.Context, plantID int) error {
+	query := `UPDATE user_plant SET is_withered = true WHERE id = $1`
+
+	result, err := r.db.Exec(ctx, query, plantID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("plant with id=%d not found", plantID)
+	}
+
+	return nil
+}

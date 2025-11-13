@@ -473,16 +473,16 @@ func (h *UserPlantHandler) GetGrowingPlants(c echo.Context) error {
 
 // UserPlantCreateRequest представляет запрос на посадку растения
 type UserPlantCreateRequest struct {
-	SeedID int `json:"seed_id" example:"1"`
-	BedID  int `json:"bed_id" example:"1"`
+	SeedID int `json:"seedId" example:"1"`
+	BedID  int `json:"bedId" example:"1"`
 }
 
 // UserPlantGrowthRequest представляет запрос на добавление роста
 type UserPlantGrowthRequest struct {
-	GrowthAmount int `json:"growth_amount" example:"10"`
+	GrowthAmount int `json:"growthAmount" example:"10"`
 }
 
 // UserPlantGrowthResponse представляет ответ при добавлении роста
 type UserPlantGrowthResponse struct {
-	NewGrowth int `json:"new_growth" example:"50"`
+	NewGrowth int `json:"newGrowth" example:"50"`
 }

@@ -1,11 +1,19 @@
 basePath: /
 definitions:
+  handler.AddQuantityRequest:
+    properties:
+      amount:
+        minimum: 1
+        type: integer
+    required:
+    - amount
+    type: object
   handler.BedCreateRequest:
     properties:
-      cell_number:
+      cellNumber:
         example: 1
         type: integer
-      is_locked:
+      isLocked:
         example: false
         type: boolean
     type: object
@@ -15,61 +23,189 @@ definitions:
         example: 5
         type: integer
     type: object
-  handler.DailyStatus:
+  handler.CreateGoodRequest:
     properties:
-      can_recover_plants:
+      cost:
+        minimum: 0
+        type: integer
+      idGood:
+        minimum: 1
+        type: integer
+      quantity:
+        minimum: 0
+        type: integer
+      type:
+        type: string
+    required:
+    - cost
+    - idGood
+    - type
+    type: object
+  handler.HabitCompletionResponse:
+    properties:
+      habitId:
+        example: 123
+        type: integer
+      message:
+        example: Habit completed successfully
+        type: string
+      plantsGrown:
+        example: 3
+        type: integer
+      xpEarned:
+        example: 50
+        type: integer
+    type: object
+  handler.HabitCreateRequest:
+    properties:
+      count:
+        example: 0
+        type: integer
+      description:
+        example: Ежедневная утренняя зарядка 15 минут
+        type: string
+      difficulty:
+        example: medium
+        type: string
+      every:
+        example: 1
+        type: integer
+      period:
+        example: day
+        type: string
+      startDate:
+        example: "2024-01-15T00:00:00Z"
+        type: string
+      tagId:
+        example: 1
+        type: integer
+      title:
+        example: Утренняя зарядка
+        type: string
+      xpReward:
+        example: 50
+        type: integer
+    type: object
+  handler.HabitUpdateRequest:
+    properties:
+      count:
+        example: 5
+        type: integer
+      description:
+        example: Обновленное описание привычки
+        type: string
+      difficulty:
+        example: hard
+        type: string
+      done:
+        example: false
         type: boolean
-      has_completed_task_today:
+      every:
+        example: 3
+        type: integer
+      period:
+        example: week
+        type: string
+      startDate:
+        example: "2024-01-20T00:00:00Z"
+        type: string
+      tagId:
+        example: 2
+        type: integer
+      title:
+        example: Утренняя зарядка - обновлено
+        type: string
+      xpReward:
+        example: 75
+        type: integer
+    type: object
+  handler.IBed:
+    properties:
+      id:
+        type: integer
+      isLock:
         type: boolean
-      missed_day:
-        type: boolean
-      plants_withered:
-        type: boolean
+      plant:
+        $ref: '#/definitions/handler.IPlant'
+    type: object
+  handler.IPlant:
+    properties:
+      FinalStage:
+        type: integer
+      currentStage:
+        type: integer
+      id:
+        type: integer
+      imgPath:
+        type: string
+      name:
+        type: string
     type: object
   handler.LevelInfoResponse:
     properties:
       experience:
         type: integer
-      experience_for_next_level:
+      experienceForNextLevel:
         type: integer
       level:
         type: integer
-      progress_percent:
+      progressPercent:
         type: number
     type: object
-  handler.StreakInfo:
+  handler.SeedStorage:
     properties:
-      current_streak:
+      bedId:
         type: integer
-      longest_streak:
+      createdAt:
+        type: string
+      currentGrowth:
         type: integer
-      missed_day:
+      icon:
+        type: string
+      id:
+        type: integer
+      isWithered:
         type: boolean
+      seedId:
+        type: integer
+      seedName:
+        description: Дополнительные поля из семени
+        type: string
+      targetGrowth:
+        type: integer
     type: object
-  handler.SyncDataResponse:
+  handler.ServerFarmData:
     properties:
-      beds:
+      coins:
+        type: integer
+      currentXp:
+        type: integer
+      didTaskToday:
+        type: boolean
+      field:
         items:
-          $ref: '#/definitions/model.Bed'
+          $ref: '#/definitions/handler.IBed'
         type: array
-      daily_status:
-        $ref: '#/definitions/handler.DailyStatus'
-      inventory:
+      habits:
+        items:
+          $ref: '#/definitions/model.Habit'
+        type: array
+      inventorySeeds:
         items:
           $ref: '#/definitions/model.UserSeedWithDetails'
         type: array
-      plants:
+      isDrought:
+        type: boolean
+      seeds:
         items:
-          $ref: '#/definitions/model.UserPlantWithSeed'
+          $ref: '#/definitions/handler.SeedStorage'
         type: array
-      shop:
+      shopStorage:
         items:
-          $ref: '#/definitions/model.SeedWithUserData'
+          $ref: '#/definitions/model.Good'
         type: array
-      stats:
-        $ref: '#/definitions/handler.UserStatWithLevel'
-      streak_info:
-        $ref: '#/definitions/handler.StreakInfo'
+      strick:
+        type: integer
       tags:
         items:
           $ref: '#/definitions/model.Tag'
@@ -78,8 +214,6 @@ definitions:
         items:
           $ref: '#/definitions/model.Task'
         type: array
-      user:
-        $ref: '#/definitions/model.User'
     type: object
   handler.TagCreateRequest:
     properties:
@@ -116,43 +250,68 @@ definitions:
     type: object
   handler.TaskCreateRequest:
     properties:
+      date:
+        example: "2024-01-15T00:00:00Z"
+        type: string
       description:
         example: Нужно завершить все задачи по проекту до конца недели
         type: string
-      due_date:
-        example: "2024-01-15T00:00:00Z"
+      difficulty:
+        example: medium
         type: string
-      tag_id:
+      tagId:
         example: 1
         type: integer
       title:
         example: Завершить проект
         type: string
-      xp_reward:
+      xpReward:
         example: 100
         type: integer
     type: object
   handler.TaskUpdateRequest:
     properties:
+      date:
+        example: "2024-01-20T00:00:00Z"
+        type: string
       description:
         example: Обновленное описание задачи
         type: string
-      due_date:
-        example: "2024-01-20T00:00:00Z"
+      difficulty:
+        example: hard
         type: string
-      tag_id:
+      done:
+        example: false
+        type: boolean
+      tagId:
         example: 2
         type: integer
       title:
         example: Завершить проект - обновлено
         type: string
-      xp_reward:
+      xpReward:
         example: 150
         type: integer
     type: object
+  handler.UpdateCostRequest:
+    properties:
+      cost:
+        minimum: 0
+        type: integer
+    required:
+    - cost
+    type: object
+  handler.UpdateQuantityRequest:
+    properties:
+      quantity:
+        minimum: 0
+        type: integer
+    required:
+    - quantity
+    type: object
   handler.UserCreateRequest:
     properties:
-      max_id:
+      maxId:
         example: 123456789
         type: integer
       username:
@@ -161,22 +320,22 @@ definitions:
     type: object
   handler.UserPlantCreateRequest:
     properties:
-      bed_id:
+      bedId:
         example: 1
         type: integer
-      seed_id:
+      seedId:
         example: 1
         type: integer
     type: object
   handler.UserPlantGrowthRequest:
     properties:
-      growth_amount:
+      growthAmount:
         example: 10
         type: integer
     type: object
   handler.UserPlantGrowthResponse:
     properties:
-      new_growth:
+      newGrowth:
         example: 50
         type: integer
     type: object
@@ -185,13 +344,13 @@ definitions:
       quantity:
         example: 5
         type: integer
-      seed_id:
+      seedId:
         example: 1
         type: integer
     type: object
   handler.UserSeedCountResponse:
     properties:
-      total_seeds:
+      totalSeeds:
         example: 15
         type: integer
     type: object
@@ -213,31 +372,6 @@ definitions:
         example: Operation completed successfully
         type: string
     type: object
-  handler.UserStatWithLevel:
-    properties:
-      current_streak:
-        type: integer
-      experience:
-        type: integer
-      experience_for_next_level:
-        type: integer
-      gold:
-        type: integer
-      id:
-        type: integer
-      level:
-        type: integer
-      longest_streak:
-        type: integer
-      total_plant_harvested:
-        type: integer
-      total_tasks_completed:
-        type: integer
-      updated_at:
-        type: string
-      user_id:
-        type: integer
-    type: object
   handler.UserUpdateRequest:
     properties:
       username:
@@ -250,52 +384,103 @@ definitions:
         type: integer
       rarity:
         type: string
-      seed_id:
+      seedId:
         type: integer
-      seed_name:
+      seedName:
         type: string
-      user_amount:
+      userAmount:
         type: integer
     type: object
   model.Bed:
     properties:
-      cell_number:
+      cellNumber:
         type: integer
-      created_at:
+      createdAt:
         type: string
       id:
         type: integer
-      is_locked:
+      isLocked:
         type: boolean
-      user_id:
+      userId:
         type: integer
     type: object
   model.BedWithUserPlant:
     properties:
-      cell_number:
+      cellNumber:
         type: integer
-      created_at:
+      createdAt:
         type: string
       id:
         type: integer
-      is_locked:
+      isLocked:
         type: boolean
-      user_id:
+      userId:
         type: integer
-      user_plant:
+      userPlant:
         $ref: '#/definitions/model.UserPlantWithSeed'
+    type: object
+  model.Good:
+    properties:
+      cost:
+        type: integer
+      createdAt:
+        type: string
+      id:
+        type: integer
+      idGood:
+        type: integer
+      quantity:
+        type: integer
+      type:
+        description: '''seed'', ''bed'''
+        type: string
+      updatedAt:
+        type: string
+      userId:
+        type: integer
+    type: object
+  model.Habit:
+    properties:
+      count:
+        type: integer
+      createdAt:
+        type: string
+      description:
+        type: string
+      difficulty:
+        type: string
+      done:
+        type: boolean
+      every:
+        type: integer
+      id:
+        type: integer
+      period:
+        type: string
+      startDate:
+        type: string
+      tag:
+        $ref: '#/definitions/model.Tag'
+      tagId:
+        type: integer
+      title:
+        type: string
+      userId:
+        type: integer
+      xpReward:
+        type: integer
     type: object
   model.Seed:
     properties:
-      created_at:
+      createdAt:
         type: string
-      gold_reward:
+      goldReward:
         type: integer
       icon:
         type: string
       id:
         type: integer
-      level_required:
+      levelRequired:
         type: integer
       modification:
         type: number
@@ -303,56 +488,29 @@ definitions:
         type: string
       rarity:
         type: string
-      target_growth:
+      targetGrowth:
         type: integer
-      xp_reward:
-        type: integer
-    type: object
-  model.SeedWithUserData:
-    properties:
-      created_at:
-        type: string
-      gold_reward:
-        type: integer
-      icon:
-        type: string
-      id:
-        type: integer
-      is_owned:
-        type: boolean
-      level_required:
-        type: integer
-      modification:
-        type: number
-      name:
-        type: string
-      rarity:
-        type: string
-      target_growth:
-        type: integer
-      user_quantity:
-        type: integer
-      xp_reward:
+      xpReward:
         type: integer
     type: object
   model.Tag:
     properties:
       color:
         type: string
-      created_at:
+      createdAt:
         type: string
       id:
         type: integer
       name:
         type: string
-      user_id:
+      userid:
         type: integer
     type: object
   model.TagWithCount:
     properties:
       color:
         type: string
-      created_at:
+      createdAt:
         type: string
       id:
         type: integer
@@ -360,167 +518,165 @@ definitions:
         type: string
       task_count:
         type: integer
-      user_id:
+      userid:
         type: integer
     type: object
   model.Task:
     properties:
-      created_at:
+      createdAt:
+        type: string
+      date:
         type: string
       description:
         type: string
       difficulty:
         type: string
-      due_date:
-        type: string
+      done:
+        type: boolean
       id:
         type: integer
-      is_done:
-        type: boolean
-      repeat_interval:
-        type: string
-      tag_id:
+      tag:
+        $ref: '#/definitions/model.Tag'
+      tagId:
         type: integer
       title:
         type: string
-      type:
-        type: string
-      user_id:
+      userId:
         type: integer
-      xp_reward:
+      xpReward:
         type: integer
     type: object
   model.User:
     properties:
-      created_at:
+      createdAt:
         type: string
       id:
         type: integer
-      is_active:
+      isActive:
         type: boolean
-      last_login:
+      lastLogin:
         type: string
-      max_id:
+      maxId:
         type: integer
       username:
         type: string
     type: object
   model.UserPlant:
     properties:
-      bed_id:
+      bedId:
         type: integer
-      created_at:
+      createdAt:
         type: string
-      current_growth:
+      currentGrowth:
         type: integer
       id:
         type: integer
-      is_withered:
+      isWithered:
         type: boolean
-      seed_id:
+      seedId:
         type: integer
-      user_id:
+      userId:
         type: integer
     type: object
   model.UserPlantHarvestResult:
     properties:
-      bed_id:
+      bedId:
         type: integer
-      created_at:
+      createdAt:
         type: string
-      current_growth:
+      currentGrowth:
         type: integer
-      gold_earned:
+      goldEarned:
         type: integer
-      gold_reward:
+      goldReward:
         type: integer
-      growth_percent:
+      growthPercent:
         type: integer
       id:
         type: integer
-      is_ready:
+      isReady:
         type: boolean
-      is_withered:
+      isWithered:
         type: boolean
-      seed_icon:
+      seedIcon:
         type: string
-      seed_id:
+      seedId:
         type: integer
-      seed_name:
+      seedName:
         type: string
-      target_growth:
+      targetGrowth:
         type: integer
-      user_id:
+      userId:
         type: integer
-      xp_earned:
+      xpEarned:
         type: integer
-      xp_reward:
+      xpReward:
         type: integer
     type: object
   model.UserPlantWithSeed:
     properties:
-      bed_id:
+      bedId:
         type: integer
-      created_at:
+      createdAt:
         type: string
-      current_growth:
+      currentGrowth:
         type: integer
-      gold_reward:
+      goldReward:
         type: integer
-      growth_percent:
+      growthPercent:
         type: integer
       id:
         type: integer
-      is_withered:
+      isWithered:
         type: boolean
-      seed_icon:
+      seedIcon:
         type: string
-      seed_id:
+      seedId:
         type: integer
-      seed_name:
+      seedName:
         type: string
-      target_growth:
+      targetGrowth:
         type: integer
-      user_id:
+      userId:
         type: integer
-      xp_reward:
+      xpReward:
         type: integer
     type: object
   model.UserSeed:
     properties:
-      created_at:
+      createdAt:
         type: string
       id:
         type: integer
       quantity:
         type: integer
-      seed_id:
+      seedId:
         type: integer
-      user_id:
+      userId:
         type: integer
     type: object
   model.UserSeedWithDetails:
     properties:
-      created_at:
+      createdAt:
         type: string
       id:
         type: integer
       quantity:
         type: integer
-      seed_icon:
+      seedIcon:
         type: string
-      seed_id:
+      seedId:
         type: integer
-      seed_name:
+      seedName:
         type: string
-      seed_rarity:
+      seedRarity:
         type: string
-      user_id:
+      userId:
         type: integer
     type: object
   model.UserStat:
     properties:
-      current_streak:
+      currentStreak:
         type: integer
       experience:
         type: integer
@@ -528,15 +684,15 @@ definitions:
         type: integer
       id:
         type: integer
-      longest_streak:
+      longestStreak:
         type: integer
-      total_plant_harvested:
+      totalPlantHarvested:
         type: integer
-      total_tasks_completed:
+      totalTasksCompleted:
         type: integer
-      updated_at:
+      updatedAt:
         type: string
-      user_id:
+      userId:
         type: integer
     type: object
 host: 10.155.36.40:8080
@@ -1026,6 +1182,877 @@ paths:
       summary: Получить грядки с растениями
       tags:
       - beds
+  /goods:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех товаров текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Good'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить товары пользователя
+      tags:
+      - goods
+    post:
+      consumes:
+      - application/json
+      description: Создает новый товар для пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Данные товара
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateGoodRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Good'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать товар
+      tags:
+      - goods
+  /goods/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет товар по ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Good ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить товар
+      tags:
+      - goods
+  /goods/{id}/add-quantity:
+    patch:
+      consumes:
+      - application/json
+      description: Добавляет указанное количество к существующему товару
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Good ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Количество для добавления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.AddQuantityRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Good'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Добавить количество товара
+      tags:
+      - goods
+  /goods/{id}/cost:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет цену товара по ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Good ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Новая цена
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateCostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Good'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить цену товара
+      tags:
+      - goods
+  /goods/{id}/quantity:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет количество товара по ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Good ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Новое количество
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateQuantityRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Good'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить количество товара
+      tags:
+      - goods
+  /goods/batch:
+    post:
+      consumes:
+      - application/json
+      description: Создает несколько товаров для пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Массив товаров
+        in: body
+        name: request
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/handler.CreateGoodRequest'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            items:
+              $ref: '#/definitions/model.Good'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать несколько товаров
+      tags:
+      - goods
+  /goods/type/{type}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает товары указанного типа для текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Good Type (seed/bed/tool/fertilizer)
+        in: path
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Good'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить товары пользователя по типу
+      tags:
+      - goods
+  /habits:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех привычек текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Фильтр по статусу выполнения
+        in: query
+        name: done
+        type: boolean
+      - description: Фильтр по периоду (day/week/month)
+        in: query
+        name: period
+        type: string
+      - description: Фильтр по ID тега
+        in: query
+        name: tag_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Habit'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить все привычки пользователя
+      tags:
+      - habits
+    post:
+      consumes:
+      - application/json
+      description: Создает новую привычку для текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Данные для создания привычки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.HabitCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Habit'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать новую привычку
+      tags:
+      - habits
+  /habits/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет привычку по ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить привычку
+      tags:
+      - habits
+    get:
+      consumes:
+      - application/json
+      description: Возвращает привычку по указанному ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Habit'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить привычку по ID
+      tags:
+      - habits
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о привычке
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Обновленные данные привычки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.HabitUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Habit'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить привычку
+      tags:
+      - habits
+  /habits/{id}/done:
+    patch:
+      consumes:
+      - application/json
+      description: Помечает привычку как выполненную, добавляет опыт пользователю,
+        создает запись в логе прогресса и увеличивает рост всех активных растений
+        пользователя на 1
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HabitCompletionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Пометить привычку как выполненную
+      tags:
+      - habits
+  /habits/{id}/increment:
+    patch:
+      consumes:
+      - application/json
+      description: Увеличивает счетчик привычки на 1
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Увеличить счетчик привычки
+      tags:
+      - habits
+  /habits/{id}/reset:
+    patch:
+      consumes:
+      - application/json
+      description: Сбрасывает счетчик привычки до 0
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Сбросить счетчик привычки
+      tags:
+      - habits
+  /habits/{id}/undone:
+    patch:
+      consumes:
+      - application/json
+      description: Помечает привычку как невыполненную (сбрасывает статус)
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Пометить привычку как невыполненную
+      tags:
+      - habits
   /seeds:
     get:
       consumes:
@@ -1624,6 +2651,18 @@ paths:
         name: X-User-ID
         required: true
         type: string
+      - description: Фильтр по статусу выполнения
+        in: query
+        name: done
+        type: boolean
+      - description: 'Фильтр по дате (формат: 2006-01-02)'
+        in: query
+        name: date
+        type: string
+      - description: Фильтр по ID тега
+        in: query
+        name: tag_id
+        type: integer
       produces:
       - application/json
       responses:
@@ -1956,139 +2995,6 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Пометить задачу как невыполненную
-      tags:
-      - tasks
-  /tasks/overdue:
-    get:
-      consumes:
-      - application/json
-      description: Возвращает список просроченных задач (с истекшим сроком выполнения)
-      parameters:
-      - description: User ID
-        in: header
-        name: X-User-ID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/model.Task'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Получить просроченные задачи
-      tags:
-      - tasks
-  /tasks/status:
-    get:
-      consumes:
-      - application/json
-      description: Возвращает задачи по статусу выполнения (pending или completed)
-      parameters:
-      - description: User ID
-        in: header
-        name: X-User-ID
-        required: true
-        type: string
-      - description: Статус задач (pending/completed)
-        in: query
-        name: status
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/model.Task'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Получить задачи по статусу
-      tags:
-      - tasks
-  /tasks/tag/{tagId}:
-    get:
-      consumes:
-      - application/json
-      description: Возвращает задачи, привязанные к определенному тегу
-      parameters:
-      - description: User ID
-        in: header
-        name: X-User-ID
-        required: true
-        type: string
-      - description: Tag ID
-        in: path
-        name: tagId
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/model.Task'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Получить задачи по тегу
       tags:
       - tasks
   /user-plants:
@@ -3042,6 +3948,24 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/handler.LevelInfoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       security:
       - ApiKeyAuth: []
       summary: Получить информацию об уровне
@@ -3297,8 +4221,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: 'Возвращает все данные пользователя для синхронизации: задачи,
-        теги, статистику, инвентарь, магазин, грядки, растения и информацию о стриках'
+      description: Возвращает все данные пользователя для синхронизации в формате
+        ServerFarmData
       parameters:
       - description: User ID
         in: header
@@ -3311,7 +4235,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.SyncDataResponse'
+            $ref: '#/definitions/handler.ServerFarmData'
         "401":
           description: Unauthorized
           schema:

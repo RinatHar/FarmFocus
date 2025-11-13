@@ -4,10 +4,10 @@ import "time"
 
 type Tag struct {
 	ID        int       `json:"id"`
-	UserID    int64     `json:"user_id"`
+	UserID    int64     `json:"userid"`
 	Name      string    `json:"name"`
 	Color     string    `json:"color,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type TagWithCount struct {

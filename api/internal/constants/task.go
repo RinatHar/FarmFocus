@@ -8,13 +8,13 @@ const (
 var ValidTaskTypes = []string{TaskTypeTask, TaskTypeHabit}
 
 const (
-	DifficultySimple = "simple"
+	DifficultyTrifle = "trifle"
 	DifficultyEasy   = "easy"
-	DifficultyMedium = "medium"
+	DifficultyNormal = "normal"
 	DifficultyHard   = "hard"
 )
 
-var ValidDifficulties = []string{DifficultySimple, DifficultyEasy, DifficultyMedium, DifficultyHard}
+var ValidDifficulties = []string{DifficultyTrifle, DifficultyEasy, DifficultyNormal, DifficultyHard}
 
 const (
 	RepeatIntervalDaily   = "daily"
