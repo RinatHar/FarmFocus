@@ -1463,7 +1463,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Создает новую привычку для текущего пользователя",
+                "description": "Создает новую привычку для текущего пользователя с базовым количеством опыта с учетом count",
                 "consumes": [
                     "application/json"
                 ],
@@ -1701,7 +1701,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Удаляет привычку по ID",
+                "description": "Удаляет привычку по ID, предварительно удаляя связанные записи в логе прогресса",
                 "consumes": [
                     "application/json"
                 ],
@@ -1778,7 +1778,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Помечает привычку как выполненную, добавляет опыт пользователю, создает запись в логе прогресса и увеличивает рост всех активных растений пользователя на 1",
+                "description": "Помечает привычку как выполненную, увеличивает счетчик, добавляет опыт пользователю по формуле, создает запись в логе прогресса, увеличивает рост всех активных растений пользователя на 1 и увеличивает стрик если это первое выполнение сегодня",
                 "consumes": [
                     "application/json"
                 ],
@@ -1889,10 +1889,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handler.HabitIncrementResponse"
                         }
                     },
                     "400": {
@@ -1972,10 +1969,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handler.HabitResetResponse"
                         }
                     },
                     "400": {
@@ -2024,7 +2018,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Помечает привычку как невыполненную (сбрасывает статус)",
+                "description": "Помечает привычку как невыполненную, уменьшает счетчик и возвращает опыт обратно на основе последней записи в логе",
                 "consumes": [
                     "application/json"
                 ],
@@ -2052,8 +2046,11 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.HabitUndoResponse"
+                        }
                     },
                     "400": {
                         "description": "Bad Request",
@@ -2096,6 +2093,11 @@ const docTemplate = `{
         },
         "/seeds": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Возвращает полный список всех доступных семян",
                 "consumes": [
                     "application/json"
@@ -2107,6 +2109,15 @@ const docTemplate = `{
                     "seeds"
                 ],
                 "summary": "Получить все семена",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2202,6 +2213,11 @@ const docTemplate = `{
         },
         "/seeds/level": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Возвращает список семян определенного уровня",
                 "consumes": [
                     "application/json"
@@ -2219,6 +2235,13 @@ const docTemplate = `{
                         "description": "Уровень семян",
                         "name": "level",
                         "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -2255,6 +2278,11 @@ const docTemplate = `{
         },
         "/seeds/rarity": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Возвращает список семян определенной редкости",
                 "consumes": [
                     "application/json"
@@ -2272,6 +2300,13 @@ const docTemplate = `{
                         "description": "Редкость семян (common, rare, epic, legendary)",
                         "name": "rarity",
                         "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -2308,6 +2343,11 @@ const docTemplate = `{
         },
         "/seeds/{id}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Возвращает информацию о конкретном семени по его ID",
                 "consumes": [
                     "application/json"
@@ -2325,6 +2365,13 @@ const docTemplate = `{
                         "description": "Seed ID",
                         "name": "id",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -2904,7 +2951,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Удаляет тег. Тег можно удалить только если к нему не привязаны задачи.",
+                "description": "Удаляет тег и сбрасывает его у всех связанных задач и привычек",
                 "consumes": [
                     "application/json"
                 ],
@@ -3073,7 +3120,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Создает новую задачу для текущего пользователя",
+                "description": "Создает новую задачу для текущего пользователя с базовым количеством опыта",
                 "consumes": [
                     "application/json"
                 ],
@@ -3311,7 +3358,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Удаляет задачу по ID",
+                "description": "Удаляет задачу по ID, предварительно удаляя связанные записи в логе прогресса",
                 "consumes": [
                     "application/json"
                 ],
@@ -3388,7 +3435,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Помечает задачу как выполненную, добавляет опыт пользователю, создает запись в логе прогресса и увеличивает рост всех активных растений пользователя на 1",
+                "description": "Помечает задачу как выполненную, добавляет опыт пользователю по формуле, создает запись в логе прогресса, увеличивает рост всех активных растений пользователя на 1 и увеличивает стрик если это первое выполнение сегодня",
                 "consumes": [
                     "application/json"
                 ],
@@ -3468,7 +3515,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Помечает задачу как невыполненную (сбрасывает статус)",
+                "description": "Помечает задачу как невыполненную и возвращает опыт обратно на основе последней записи в логе",
                 "consumes": [
                     "application/json"
                 ],
@@ -3496,8 +3543,11 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.TaskUndoResponse"
+                        }
                     },
                     "400": {
                         "description": "Bad Request",
@@ -3601,7 +3651,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Сажает новое растение на грядку, используя семя из инвентаря",
+                "description": "Сажает новое растение на свободную грядку по cellNumber, используя семя из инвентаря",
                 "consumes": [
                     "application/json"
                 ],
@@ -5151,7 +5201,7 @@ const docTemplate = `{
         },
         "/users": {
             "post": {
-                "description": "Создает нового пользователя или обновляет существующего по MaxID. При создании также создается статистика и начальные грядки.",
+                "description": "Создает нового пользователя или обновляет существующего по MaxID. При создании также создается статистика, начальные грядки, добавляется стартовый набор семян и товары в магазин.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5537,21 +5587,13 @@ const docTemplate = `{
         "handler.HabitCompletionResponse": {
             "type": "object",
             "properties": {
-                "habitId": {
-                    "type": "integer",
-                    "example": 123
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Habit completed successfully"
-                },
                 "plantsGrown": {
                     "type": "integer",
                     "example": 3
                 },
                 "xpEarned": {
                     "type": "integer",
-                    "example": 50
+                    "example": 150
                 }
             }
         },
@@ -5593,6 +5635,33 @@ const docTemplate = `{
                 "xpReward": {
                     "type": "integer",
                     "example": 50
+                }
+            }
+        },
+        "handler.HabitIncrementResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "handler.HabitResetResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Habit count reset successfully"
+                }
+            }
+        },
+        "handler.HabitUndoResponse": {
+            "type": "object",
+            "properties": {
+                "xpEarned": {
+                    "type": "integer",
+                    "example": 150
                 }
             }
         },
@@ -5710,6 +5779,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "imgPath": {
+                    "type": "string"
+                },
                 "isWithered": {
                     "type": "boolean"
                 },
@@ -5717,7 +5789,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "seedName": {
-                    "description": "Дополнительные поля из семени",
                     "type": "string"
                 },
                 "targetGrowth": {
@@ -5816,21 +5887,13 @@ const docTemplate = `{
         "handler.TaskCompletionResponse": {
             "type": "object",
             "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "Task completed successfully"
-                },
-                "plants_grown": {
+                "plantsGrown": {
                     "type": "integer",
                     "example": 3
                 },
-                "task_id": {
+                "xpEarned": {
                     "type": "integer",
-                    "example": 123
-                },
-                "xp_earned": {
-                    "type": "integer",
-                    "example": 100
+                    "example": 150
                 }
             }
         },
@@ -5856,10 +5919,15 @@ const docTemplate = `{
                 "title": {
                     "type": "string",
                     "example": "Завершить проект"
-                },
-                "xpReward": {
+                }
+            }
+        },
+        "handler.TaskUndoResponse": {
+            "type": "object",
+            "properties": {
+                "xpEarned": {
                     "type": "integer",
-                    "example": 100
+                    "example": 150
                 }
             }
         },
@@ -5936,7 +6004,7 @@ const docTemplate = `{
         "handler.UserPlantCreateRequest": {
             "type": "object",
             "properties": {
-                "bedId": {
+                "cellNumber": {
                     "type": "integer",
                     "example": 1
                 },
@@ -6177,6 +6245,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "imgPlant": {
+                    "type": "string"
+                },
                 "levelRequired": {
                     "type": "integer"
                 },
@@ -6363,6 +6434,9 @@ const docTemplate = `{
                 "seedId": {
                     "type": "integer"
                 },
+                "seedImgPlant": {
+                    "type": "string"
+                },
                 "seedName": {
                     "type": "string"
                 },
@@ -6409,6 +6483,9 @@ const docTemplate = `{
                 },
                 "seedId": {
                     "type": "integer"
+                },
+                "seedImgPlant": {
+                    "type": "string"
                 },
                 "seedName": {
                     "type": "string"
@@ -6487,6 +6564,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "isDrought": {
+                    "type": "boolean"
                 },
                 "longestStreak": {
                     "type": "integer"

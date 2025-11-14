@@ -219,3 +219,15 @@ func (r *UserSeedRepo) GetTotalSeedCount(ctx context.Context, userID int64) (int
 	err := r.db.QueryRow(ctx, query, userID).Scan(&count)
 	return count, err
 }
+
+// AddOrUpdateQuantity добавляет или обновляет количество семян у пользователя
+func (r *UserSeedRepo) AddOrUpdateQuantity(ctx context.Context, userID int64, seedID int, quantity int) error {
+	query := `
+		INSERT INTO user_seed (user_id, seed_id, quantity, created_at)
+		VALUES ($1, $2, $3, NOW())
+		ON CONFLICT (user_id, seed_id) 
+		DO UPDATE SET quantity = user_seed.quantity + EXCLUDED.quantity
+	`
+	_, err := r.db.Exec(ctx, query, userID, seedID, quantity)
+	return err
+}

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -129,11 +130,8 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Проверяем засуху (есть ли невыполненные задачи за вчера)
-	isDrought, err := h.checkDroughtStatus(ctx, userID)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
+	// Используем поле IsDrought из статистики вместо старой логики проверки
+	isDrought := stats.IsDrought
 
 	// Получаем все задачи пользователя
 	tasks, err := h.taskRepo.GetAll(ctx, userID)
@@ -185,7 +183,7 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 			Name:         plant.SeedName,
 			CurrentStage: plant.CurrentGrowth,
 			FinalStage:   plant.TargetGrowth,
-			ImgPath:      plant.SeedIcon,
+			ImgPath:      plant.SeedImgPlant, // Используем imgPlant вместо icon
 		}
 	}
 
@@ -214,10 +212,10 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 			IsWithered:    plant.IsWithered,
 			BedID:         plant.BedID,
 			CreatedAt:     plant.CreatedAt,
-			// Добавляем детали семени
-			SeedName:     plant.SeedName,
-			TargetGrowth: plant.TargetGrowth,
-			Icon:         plant.SeedIcon,
+			SeedName:      plant.SeedName,
+			TargetGrowth:  plant.TargetGrowth,
+			Icon:          plant.SeedIcon,
+			ImgPath:       plant.SeedImgPlant,
 		}
 	}
 
@@ -238,38 +236,6 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response)
-}
-
-// checkDroughtStatus проверяет статус засухи для пользователя
-func (h *UserHandler) checkDroughtStatus(ctx context.Context, userID int64) (bool, error) {
-	yesterday := time.Now().AddDate(0, 0, -1)
-
-	// Получаем задачи за вчера
-	tasks, err := h.taskRepo.GetByDate(ctx, userID, yesterday)
-	if err != nil {
-		return false, err
-	}
-
-	// Проверяем невыполненные задачи
-	for _, task := range tasks {
-		if !task.Done {
-			return true, nil
-		}
-	}
-
-	// Проверяем привычки за вчера
-	habits, err := h.habitRepo.GetAll(ctx, userID)
-	if err != nil {
-		return false, err
-	}
-
-	for _, habit := range habits {
-		if h.shouldHabitBeCompletedYesterday(habit, yesterday) && !habit.Done {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
 
 // shouldHabitBeCompletedYesterday проверяет, должна ли привычка быть выполнена вчера
@@ -325,7 +291,7 @@ func (h *UserHandler) GetCurrentUser(c echo.Context) error {
 
 // CreateOrUpdateUser godoc
 // @Summary Создать или обновить пользователя
-// @Description Создает нового пользователя или обновляет существующего по MaxID. При создании также создается статистика и начальные грядки.
+// @Description Создает нового пользователя или обновляет существующего по MaxID. При создании также создается статистика, начальные грядки, добавляется стартовый набор семян и товары в магазин.
 // @Tags users
 // @Accept json
 // @Produce json
@@ -378,7 +344,7 @@ func (h *UserHandler) CreateOrUpdateUser(c echo.Context) error {
 	stat := &model.UserStat{
 		UserID:              user.ID,
 		Experience:          0,
-		Gold:                100,
+		Gold:                10,
 		CurrentStreak:       0,
 		LongestStreak:       0,
 		TotalTasksCompleted: 0,
@@ -395,7 +361,62 @@ func (h *UserHandler) CreateOrUpdateUser(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
+	// Добавляем стартовый набор семян (10 пшеницы)
+	wheatSeedID := 1 // ID пшеницы из таблицы seed
+	initialWheatQuantity := 10
+
+	if err := h.userSeedRepo.AddOrUpdateQuantity(ctx, user.ID, wheatSeedID, initialWheatQuantity); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to add initial seeds: " + err.Error()})
+	}
+
+	// Добавляем стартовый набор товаров в магазин
+	if err := h.createInitialShopGoods(ctx, user.ID); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create initial shop goods: " + err.Error()})
+	}
+
 	return c.JSON(http.StatusCreated, user)
+}
+
+// createInitialShopGoods создает начальный набор товаров в магазине пользователя
+func (h *UserHandler) createInitialShopGoods(ctx context.Context, userID int64) error {
+	aubergineGood := &model.Good{
+		UserID:   userID,
+		Type:     "seed",
+		IDGood:   2,
+		Quantity: 5,
+		Cost:     4,
+	}
+
+	if err := h.goodRepo.CreateOrUpdate(ctx, aubergineGood); err != nil {
+		return fmt.Errorf("failed to create aubergine good: %w", err)
+	}
+
+	wheatGood := &model.Good{
+		UserID:   userID,
+		Type:     "seed",
+		IDGood:   1,
+		Quantity: 10,
+		Cost:     1,
+	}
+
+	if err := h.goodRepo.CreateOrUpdate(ctx, wheatGood); err != nil {
+		return fmt.Errorf("failed to create wheat good: %w", err)
+	}
+
+	// 1 дополнительное поле (bed) по цене 100 золота
+	bedGood := &model.Good{
+		UserID:   userID,
+		Type:     "bed",
+		IDGood:   0,
+		Quantity: 1,
+		Cost:     30,
+	}
+
+	if err := h.goodRepo.CreateOrUpdate(ctx, bedGood); err != nil {
+		return fmt.Errorf("failed to create bed good: %w", err)
+	}
+
+	return nil
 }
 
 // UpdateUser godoc
@@ -496,8 +517,8 @@ type SeedStorage struct {
 	IsWithered    bool      `json:"isWithered"`
 	BedID         int       `json:"bedId"`
 	CreatedAt     time.Time `json:"createdAt"`
-	// Дополнительные поля из семени
-	SeedName     string `json:"seedName,omitempty"`
-	TargetGrowth int    `json:"targetGrowth,omitempty"`
-	Icon         string `json:"icon,omitempty"`
+	SeedName      string    `json:"seedName,omitempty"`
+	TargetGrowth  int       `json:"targetGrowth,omitempty"`
+	Icon          string    `json:"icon,omitempty"`
+	ImgPath       string    `json:"imgPath,omitempty"`
 }

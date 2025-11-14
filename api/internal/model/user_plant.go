@@ -16,6 +16,7 @@ type UserPlantWithSeed struct {
 	UserPlant
 	SeedName      string `json:"seedName"`
 	SeedIcon      string `json:"seedIcon,omitempty"`
+	SeedImgPlant  string `json:"seedImgPlant,omitempty"`
 	TargetGrowth  int    `json:"targetGrowth"`
 	XPReward      int    `json:"xpReward"`
 	GoldReward    int    `json:"goldReward"`

@@ -313,3 +313,9 @@ func (r *TaskRepo) GetByTag(ctx context.Context, userID int64, tagID int) ([]mod
 	}
 	return tasks, nil
 }
+
+func (r *TaskRepo) ResetTag(ctx context.Context, userID int64, tagID int) error {
+	query := `UPDATE task SET tag_id = NULL WHERE user_id = $1 AND tag_id = $2`
+	_, err := r.db.Exec(ctx, query, userID, tagID)
+	return err
+}

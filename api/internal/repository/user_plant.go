@@ -178,8 +178,8 @@ func (r *UserPlantRepo) DeleteByBed(ctx context.Context, bedID int) error {
 
 func (r *UserPlantRepo) GetWithSeedDetails(ctx context.Context, userID int64) ([]model.UserPlantWithSeed, error) {
 	query := `
-		SELECT up.id, up.user_id, up.seed_id, up.bed_id, up.current_growth, up.created_at,
-		       s.name as seed_name, s.icon as seed_icon, s.target_growth, s.gold_reward, s.xp_reward
+		SELECT up.id, up.user_id, up.seed_id, up.bed_id, up.current_growth, up.is_withered, up.created_at,
+		       s.name as seed_name, s.icon as seed_icon, s.img_plant as seed_img_plant, s.target_growth, s.gold_reward, s.xp_reward
 		FROM user_plant up
 		INNER JOIN seed s ON up.seed_id = s.id
 		WHERE up.user_id = $1
@@ -195,8 +195,8 @@ func (r *UserPlantRepo) GetWithSeedDetails(ctx context.Context, userID int64) ([
 	for rows.Next() {
 		var plant model.UserPlantWithSeed
 		if err := rows.Scan(
-			&plant.ID, &plant.UserID, &plant.SeedID, &plant.BedID, &plant.CurrentGrowth, &plant.CreatedAt,
-			&plant.SeedName, &plant.SeedIcon, &plant.TargetGrowth, &plant.GoldReward, &plant.XPReward,
+			&plant.ID, &plant.UserID, &plant.SeedID, &plant.BedID, &plant.CurrentGrowth, &plant.IsWithered, &plant.CreatedAt,
+			&plant.SeedName, &plant.SeedIcon, &plant.SeedImgPlant, &plant.TargetGrowth, &plant.GoldReward, &plant.XPReward,
 		); err != nil {
 			return nil, err
 		}

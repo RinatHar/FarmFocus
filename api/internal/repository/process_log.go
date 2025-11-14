@@ -402,3 +402,108 @@ func (r *ProgressLogRepo) HasUserCompletedHabitToday(ctx context.Context, userID
 	err := r.db.QueryRow(ctx, query, userID, today).Scan(&exists)
 	return exists, err
 }
+
+// GetLastByTaskID возвращает последнюю запись progress_log для задачи
+func (r *ProgressLogRepo) GetLastByTaskID(ctx context.Context, taskID int) (*model.ProgressLog, error) {
+	query := `
+		SELECT id, user_id, task_id, habit_id, xp_earned, gold_earned, created_at
+		FROM progress_log
+		WHERE task_id = $1 AND xp_earned > 0
+		ORDER BY created_at DESC
+		LIMIT 1
+	`
+
+	var log model.ProgressLog
+	err := r.db.QueryRow(ctx, query, taskID).Scan(
+		&log.ID,
+		&log.UserID,
+		&log.TaskID,
+		&log.HabitID,
+		&log.XPEarned,
+		&log.GoldEarned,
+		&log.CreatedAt,
+	)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, fmt.Errorf("progress log for task_id=%d not found", taskID)
+		}
+		return nil, err
+	}
+
+	return &log, nil
+}
+
+// GetLastByHabitID возвращает последнюю запись progress_log для привычки
+func (r *ProgressLogRepo) GetLastByHabitID(ctx context.Context, habitID int) (*model.ProgressLog, error) {
+	query := `
+		SELECT id, user_id, task_id, habit_id, xp_earned, gold_earned, created_at
+		FROM progress_log
+		WHERE habit_id = $1 AND xp_earned > 0
+		ORDER BY created_at DESC
+		LIMIT 1
+	`
+
+	var log model.ProgressLog
+	err := r.db.QueryRow(ctx, query, habitID).Scan(
+		&log.ID,
+		&log.UserID,
+		&log.TaskID,
+		&log.HabitID,
+		&log.XPEarned,
+		&log.GoldEarned,
+		&log.CreatedAt,
+	)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, fmt.Errorf("progress log for habit_id=%d not found", habitID)
+		}
+		return nil, err
+	}
+
+	return &log, nil
+}
+
+// DeleteByTaskID удаляет все записи progress_log для указанной задачи
+func (r *ProgressLogRepo) DeleteByTaskID(ctx context.Context, taskID int) error {
+	query := `DELETE FROM progress_log WHERE task_id = $1`
+	result, err := r.db.Exec(ctx, query, taskID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected := result.RowsAffected()
+	fmt.Printf("Deleted %d progress logs for task %d\n", rowsAffected, taskID)
+
+	return nil
+}
+
+// DeleteByHabitID удаляет все записи progress_log для указанной привычки
+func (r *ProgressLogRepo) DeleteByHabitID(ctx context.Context, habitID int) error {
+	query := `DELETE FROM progress_log WHERE habit_id = $1`
+	result, err := r.db.Exec(ctx, query, habitID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected := result.RowsAffected()
+	fmt.Printf("Deleted %d progress logs for habit %d\n", rowsAffected, habitID)
+
+	return nil
+}
+
+// В ProgressRepo добавьте метод:
+func (r *ProgressLogRepo) GetLastActivityDate(ctx context.Context, userID int64) (time.Time, error) {
+	var lastActivity time.Time
+	query := `
+		SELECT COALESCE(MAX(created_at), '0001-01-01'::timestamp)
+		FROM progress_log 
+		WHERE user_id = $1 AND xp_earned > 0
+	`
+	err := r.db.QueryRow(ctx, query, userID).Scan(&lastActivity)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return lastActivity, nil
+}

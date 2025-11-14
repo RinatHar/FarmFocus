@@ -276,36 +276,3 @@ func (r *GoodRepo) DeleteByUser(ctx context.Context, userID int64) error {
 
 	return nil
 }
-
-func (r *GoodRepo) GetAllUsers(ctx context.Context) ([]model.User, error) {
-	query := `
-		SELECT DISTINCT u.id, u.max_id, u.username, u.created_at, u.last_login, u.is_active 
-		FROM user_info u 
-		JOIN good g ON u.id = g.user_id 
-		WHERE u.is_active = true
-	`
-
-	rows, err := r.db.Query(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	users := []model.User{}
-	for rows.Next() {
-		var user model.User
-		err := rows.Scan(
-			&user.ID,
-			&user.MaxID,
-			&user.Username,
-			&user.CreatedAt,
-			&user.LastLogin,
-			&user.IsActive,
-		)
-		if err != nil {
-			return nil, err
-		}
-		users = append(users, user)
-	}
-	return users, nil
-}

@@ -20,12 +20,12 @@ func NewSeedRepo(db *pgxpool.Pool) *SeedRepo {
 
 func (r *SeedRepo) Create(ctx context.Context, seed *model.Seed) error {
 	query := `
-		INSERT INTO seed (name, icon, level_required, target_growth, rarity, modification, gold_reward, xp_reward, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO seed (name, icon, img_plant, level_required, target_growth, rarity, modification, gold_reward, xp_reward, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id
 	`
 	return r.db.QueryRow(ctx, query,
-		seed.Name, seed.Icon, seed.LevelRequired, seed.TargetGrowth, seed.Rarity,
+		seed.Name, seed.Icon, seed.ImgPlant, seed.LevelRequired, seed.TargetGrowth, seed.Rarity,
 		seed.Modification, seed.GoldReward, seed.XPReward, seed.CreatedAt,
 	).Scan(&seed.ID)
 }
@@ -33,12 +33,12 @@ func (r *SeedRepo) Create(ctx context.Context, seed *model.Seed) error {
 func (r *SeedRepo) GetByID(ctx context.Context, id int) (*model.Seed, error) {
 	var seed model.Seed
 	query := `
-		SELECT id, name, icon, level_required, target_growth, rarity, modification, gold_reward, xp_reward, created_at
+		SELECT id, name, icon, img_plant, level_required, target_growth, rarity, modification, gold_reward, xp_reward, created_at
 		FROM seed
 		WHERE id = $1
 	`
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&seed.ID, &seed.Name, &seed.Icon, &seed.LevelRequired, &seed.TargetGrowth,
+		&seed.ID, &seed.Name, &seed.Icon, &seed.ImgPlant, &seed.LevelRequired, &seed.TargetGrowth,
 		&seed.Rarity, &seed.Modification, &seed.GoldReward, &seed.XPReward, &seed.CreatedAt,
 	)
 	if err != nil {
@@ -52,7 +52,7 @@ func (r *SeedRepo) GetByID(ctx context.Context, id int) (*model.Seed, error) {
 
 func (r *SeedRepo) GetAll(ctx context.Context) ([]model.Seed, error) {
 	query := `
-		SELECT id, name, icon, level_required, target_growth, rarity, modification, gold_reward, xp_reward, created_at
+		SELECT id, name, icon, img_plant, level_required, target_growth, rarity, modification, gold_reward, xp_reward, created_at
 		FROM seed
 		ORDER BY level_required, name
 	`
@@ -66,7 +66,7 @@ func (r *SeedRepo) GetAll(ctx context.Context) ([]model.Seed, error) {
 	for rows.Next() {
 		var seed model.Seed
 		if err := rows.Scan(
-			&seed.ID, &seed.Name, &seed.Icon, &seed.LevelRequired, &seed.TargetGrowth,
+			&seed.ID, &seed.Name, &seed.Icon, &seed.ImgPlant, &seed.LevelRequired, &seed.TargetGrowth,
 			&seed.Rarity, &seed.Modification, &seed.GoldReward, &seed.XPReward, &seed.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -78,7 +78,7 @@ func (r *SeedRepo) GetAll(ctx context.Context) ([]model.Seed, error) {
 
 func (r *SeedRepo) GetByLevel(ctx context.Context, level int) ([]model.Seed, error) {
 	query := `
-		SELECT id, name, icon, level_required, target_growth, rarity, modification, gold_reward, xp_reward, created_at
+		SELECT id, name, icon, img_plant, level_required, target_growth, rarity, modification, gold_reward, xp_reward, created_at
 		FROM seed
 		WHERE level_required <= $1
 		ORDER BY level_required, rarity DESC, name
@@ -93,7 +93,7 @@ func (r *SeedRepo) GetByLevel(ctx context.Context, level int) ([]model.Seed, err
 	for rows.Next() {
 		var seed model.Seed
 		if err := rows.Scan(
-			&seed.ID, &seed.Name, &seed.Icon, &seed.LevelRequired, &seed.TargetGrowth,
+			&seed.ID, &seed.Name, &seed.Icon, &seed.ImgPlant, &seed.LevelRequired, &seed.TargetGrowth,
 			&seed.Rarity, &seed.Modification, &seed.GoldReward, &seed.XPReward, &seed.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -105,7 +105,7 @@ func (r *SeedRepo) GetByLevel(ctx context.Context, level int) ([]model.Seed, err
 
 func (r *SeedRepo) GetByRarity(ctx context.Context, rarity string) ([]model.Seed, error) {
 	query := `
-		SELECT id, name, icon, level_required, target_growth, rarity, modification, gold_reward, xp_reward, created_at
+		SELECT id, name, icon, img_plant, level_required, target_growth, rarity, modification, gold_reward, xp_reward, created_at
 		FROM seed
 		WHERE rarity = $1
 		ORDER BY level_required, name
@@ -120,7 +120,7 @@ func (r *SeedRepo) GetByRarity(ctx context.Context, rarity string) ([]model.Seed
 	for rows.Next() {
 		var seed model.Seed
 		if err := rows.Scan(
-			&seed.ID, &seed.Name, &seed.Icon, &seed.LevelRequired, &seed.TargetGrowth,
+			&seed.ID, &seed.Name, &seed.Icon, &seed.ImgPlant, &seed.LevelRequired, &seed.TargetGrowth,
 			&seed.Rarity, &seed.Modification, &seed.GoldReward, &seed.XPReward, &seed.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -133,16 +133,16 @@ func (r *SeedRepo) GetByRarity(ctx context.Context, rarity string) ([]model.Seed
 func (r *SeedRepo) Update(ctx context.Context, seed *model.Seed) error {
 	query := `
 		UPDATE seed
-		SET name = $1, icon = $2, level_required = $3, target_growth = $4, rarity = $5,
-			modification = $6, gold_reward = $7, xp_reward = $8
-		WHERE id = $9
-		RETURNING id, name, icon, level_required, target_growth, rarity, modification, gold_reward, xp_reward, created_at
+		SET name = $1, icon = $2, img_plant = $3, level_required = $4, target_growth = $5, rarity = $6,
+			modification = $7, gold_reward = $8, xp_reward = $9
+		WHERE id = $10
+		RETURNING id, name, icon, img_plant, level_required, target_growth, rarity, modification, gold_reward, xp_reward, created_at
 	`
 	err := r.db.QueryRow(ctx, query,
-		seed.Name, seed.Icon, seed.LevelRequired, seed.TargetGrowth, seed.Rarity,
+		seed.Name, seed.Icon, seed.ImgPlant, seed.LevelRequired, seed.TargetGrowth, seed.Rarity,
 		seed.Modification, seed.GoldReward, seed.XPReward, seed.ID,
 	).Scan(
-		&seed.ID, &seed.Name, &seed.Icon, &seed.LevelRequired, &seed.TargetGrowth,
+		&seed.ID, &seed.Name, &seed.Icon, &seed.ImgPlant, &seed.LevelRequired, &seed.TargetGrowth,
 		&seed.Rarity, &seed.Modification, &seed.GoldReward, &seed.XPReward, &seed.CreatedAt,
 	)
 	if err != nil {

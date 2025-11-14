@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS user_stat (
     longest_streak INTEGER DEFAULT 0,
     total_plant_harvested BIGINT DEFAULT 0,
     total_tasks_completed BIGINT DEFAULT 0,
+    is_drought BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -131,7 +132,7 @@ CREATE TABLE IF NOT EXISTS good (
     id SERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES user_info(id) ON DELETE CASCADE,
     type VARCHAR(20) NOT NULL CHECK (type IN ('seed', 'bed')),
-    id_good INTEGER NOT NULL, -- ID в соответствующей таблице (seed.id, bed.id и т.д.)
+    id_good INTEGER NOT NULL,
     quantity INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0),
     cost INTEGER NOT NULL CHECK (cost >= 0),
     created_at TIMESTAMP DEFAULT NOW(),

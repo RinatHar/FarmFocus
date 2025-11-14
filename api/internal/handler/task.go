@@ -9,6 +9,7 @@ import (
 
 	"github.com/RinatHar/FarmFocus/api/internal/model"
 	"github.com/RinatHar/FarmFocus/api/internal/repository"
+	"github.com/RinatHar/FarmFocus/api/internal/utils"
 	"github.com/labstack/echo/v4"
 )
 
@@ -35,7 +36,7 @@ func NewTaskHandler(
 
 // Create godoc
 // @Summary Создать новую задачу
-// @Description Создает новую задачу для текущего пользователя
+// @Description Создает новую задачу для текущего пользователя с базовым количеством опыта
 // @Tags tasks
 // @Accept json
 // @Produce json
@@ -58,6 +59,9 @@ func (h *TaskHandler) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
+	// Устанавливаем базовое количество опыта в зависимости от сложности
+	calcXP := utils.GetBaseXPForDifficulty(req.Difficulty)
+
 	task := model.Task{
 		UserID:      userID,
 		Title:       req.Title,
@@ -65,7 +69,7 @@ func (h *TaskHandler) Create(c echo.Context) error {
 		Difficulty:  req.Difficulty,
 		Date:        req.Date,
 		Done:        false,
-		XPReward:    req.XPReward,
+		XPReward:    calcXP,
 		TagID:       req.TagID,
 		CreatedAt:   time.Now(),
 	}
@@ -223,7 +227,7 @@ func (h *TaskHandler) Update(c echo.Context) error {
 
 // Delete godoc
 // @Summary Удалить задачу
-// @Description Удаляет задачу по ID
+// @Description Удаляет задачу по ID, предварительно удаляя связанные записи в логе прогресса
 // @Tags tasks
 // @Accept json
 // @Produce json
@@ -247,20 +251,50 @@ func (h *TaskHandler) Delete(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid task ID"})
 	}
 
-	err = h.repo.Delete(context.Background(), id, userID)
-	if err != nil {
+	// Проверяем существование задачи и принадлежность пользователю
+	if _, err := h.repo.GetByID(context.Background(), id, userID); err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
+	// Удаляем связанные записи в progress_log
+	if err := h.progressRepo.DeleteByTaskID(context.Background(), id); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Удаляем задачу
+	err = h.repo.Delete(context.Background(), id, userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
 	return c.NoContent(http.StatusNoContent)
+}
+
+// growUserPlants увеличивает рост всех активных растений пользователя
+func (h *TaskHandler) growUserPlants(ctx context.Context, userID int64, growthAmount int) (int, error) {
+	userPlants, err := h.userPlantRepo.GetByUser(ctx, userID)
+	if err != nil {
+		return 0, err
+	}
+
+	grownCount := 0
+	for _, plant := range userPlants {
+		_, err := h.userPlantRepo.AddGrowth(ctx, plant.ID, growthAmount)
+		if err != nil {
+			continue
+		}
+		grownCount++
+	}
+
+	return grownCount, nil
 }
 
 // MarkAsDone godoc
 // @Summary Пометить задачу как выполненную
-// @Description Помечает задачу как выполненную, добавляет опыт пользователю, создает запись в логе прогресса и увеличивает рост всех активных растений пользователя на 1
+// @Description Помечает задачу как выполненную, добавляет опыт пользователю по формуле, создает запись в логе прогресса, увеличивает рост всех активных растений пользователя на 1 и увеличивает стрик если это первое выполнение сегодня
 // @Tags tasks
 // @Accept json
 // @Produce json
@@ -284,7 +318,7 @@ func (h *TaskHandler) MarkAsDone(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid task ID"})
 	}
 
-	// Получаем задачу чтобы узнать награду
+	// Получаем задачу
 	task, err := h.repo.GetByID(context.Background(), id, userID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -293,17 +327,60 @@ func (h *TaskHandler) MarkAsDone(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
+	// Проверяем, не выполнена ли уже задача
+	if task.Done {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Task is already marked as done",
+		})
+	}
+
+	// Получаем статистику пользователя для расчета уровня
+	stats, err := h.userStatRepo.GetByUserID(context.Background(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Рассчитываем опыт по формуле: базовый опыт * (коэф уровня + коэф сложности)
+	userLevel := stats.Level()
+	calculatedXP := utils.CalculateTaskXP(task.XPReward, userLevel, task.Difficulty)
+
+	// Проверяем, выполнены ли сегодня задачи или привычки
+	hasCompletedTaskToday, err := h.progressRepo.HasUserCompletedTaskToday(context.Background(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	hasCompletedHabitToday, err := h.progressRepo.HasUserCompletedHabitToday(context.Background(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Если сегодня еще не выполнено ни задач, ни привычек - увеличиваем стрик
+	shouldIncrementStreak := !hasCompletedTaskToday && !hasCompletedHabitToday
+
+	// Если это первое выполнение сегодня и пользователь в засухе - сбрасываем засуху
+	if shouldIncrementStreak && stats.IsDrought {
+		h.userStatRepo.ResetDrought(context.Background(), userID)
+	}
+
 	// Помечаем задачу как выполненную
 	err = h.repo.MarkAsDone(context.Background(), id, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
+	// Увеличиваем стрик если это первое выполнение сегодня
+	if shouldIncrementStreak {
+		if err := h.userStatRepo.IncrementStreak(context.Background(), userID); err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+	}
+
 	// Создаем запись в progress_log
 	progressLog := &model.ProgressLog{
 		UserID:     userID,
 		TaskID:     &id,
-		XPEarned:   task.XPReward,
+		XPEarned:   calculatedXP,
 		GoldEarned: 0,
 		CreatedAt:  time.Now(),
 	}
@@ -313,8 +390,8 @@ func (h *TaskHandler) MarkAsDone(c echo.Context) error {
 	}
 
 	// Добавляем опыт пользователю
-	if task.XPReward > 0 {
-		if err := h.userStatRepo.AddExperience(context.Background(), userID, int64(task.XPReward)); err != nil {
+	if calculatedXP > 0 {
+		if err := h.userStatRepo.AddExperience(context.Background(), userID, int64(calculatedXP)); err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
@@ -326,42 +403,21 @@ func (h *TaskHandler) MarkAsDone(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, TaskCompletionResponse{
-		Message:     "Task completed successfully",
-		XPEarned:    task.XPReward,
-		TaskID:      id,
+		XPEarned:    calculatedXP,
 		PlantsGrown: plantsGrown,
 	})
 }
 
-// growUserPlants увеличивает рост всех активных растений пользователя
-func (h *TaskHandler) growUserPlants(ctx context.Context, userID int64, growthAmount int) (int, error) {
-	userPlants, err := h.userPlantRepo.GetByUser(ctx, userID)
-	if err != nil {
-		return 0, err
-	}
-
-	grownCount := 0
-	for _, plant := range userPlants {
-		_, err := h.userPlantRepo.AddGrowth(ctx, plant.ID, growthAmount)
-		if err != nil {
-			continue
-		}
-		grownCount++
-	}
-
-	return grownCount, nil
-}
-
 // MarkAsUndone godoc
 // @Summary Пометить задачу как невыполненную
-// @Description Помечает задачу как невыполненную (сбрасывает статус)
+// @Description Помечает задачу как невыполненную и возвращает опыт обратно на основе последней записи в логе
 // @Tags tasks
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Param X-User-ID header string true "User ID"
 // @Param id path int true "Task ID"
-// @Success 204 "No Content"
+// @Success 200 {object} TaskUndoResponse
 // @Failure 400 {object} map[string]string
 // @Failure 401 {object} map[string]string
 // @Failure 404 {object} map[string]string
@@ -378,6 +434,36 @@ func (h *TaskHandler) MarkAsUndone(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid task ID"})
 	}
 
+	// Получаем задачу для проверки существования
+
+	if _, err := h.repo.GetByID(context.Background(), id, userID); err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Ищем последнюю запись в progress_log для этой задачи
+	lastProgress, err := h.progressRepo.GetLastByTaskID(context.Background(), id)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": "No completion record found for this task",
+			})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Проверяем, что запись содержит положительный опыт (задача была выполнена)
+	if lastProgress.XPEarned <= 0 {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Task was not completed or already undone",
+		})
+	}
+
+	xpToReturn := lastProgress.XPEarned
+
+	// Помечаем задачу как невыполненную
 	err = h.repo.MarkAsUndone(context.Background(), id, userID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -386,10 +472,43 @@ func (h *TaskHandler) MarkAsUndone(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	// Возвращаем опыт (вычитаем)
+	if xpToReturn > 0 {
+		if err := h.userStatRepo.RemoveExperience(context.Background(), userID, int64(xpToReturn)); err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+	}
+
+	// Создаем запись в progress_log о возврате опыта
+	progressLog := &model.ProgressLog{
+		UserID:     userID,
+		TaskID:     &id,
+		XPEarned:   -xpToReturn, // Отрицательное значение для возврата
+		GoldEarned: 0,
+		CreatedAt:  time.Now(),
+	}
+
+	if err := h.progressRepo.Create(context.Background(), progressLog); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, TaskUndoResponse{
+		XPEarned: -xpToReturn,
+	})
 }
 
 // DTO для запросов
+
+// TaskCompletionResponse представляет ответ при завершении задачи
+type TaskCompletionResponse struct {
+	XPEarned    int `json:"xpEarned" example:"150"`
+	PlantsGrown int `json:"plantsGrown" example:"3"`
+}
+
+// TaskUndoResponse представляет ответ при отмене выполнения задачи
+type TaskUndoResponse struct {
+	XPEarned int `json:"xpEarned" example:"150"`
+}
 
 // TaskCreateRequest представляет запрос на создание задачи
 type TaskCreateRequest struct {
@@ -397,7 +516,6 @@ type TaskCreateRequest struct {
 	Description *string    `json:"description,omitempty" example:"Нужно завершить все задачи по проекту до конца недели"`
 	Difficulty  string     `json:"difficulty" example:"medium"`
 	Date        *time.Time `json:"date,omitempty" example:"2024-01-15T00:00:00Z"`
-	XPReward    int        `json:"xpReward" example:"100"`
 	TagID       *int       `json:"tagId,omitempty" example:"1"`
 }
 
@@ -410,12 +528,4 @@ type TaskUpdateRequest struct {
 	Done        bool       `json:"done" example:"false"`
 	XPReward    int        `json:"xpReward" example:"150"`
 	TagID       *int       `json:"tagId,omitempty" example:"2"`
-}
-
-// TaskCompletionResponse представляет ответ при завершении задачи
-type TaskCompletionResponse struct {
-	Message     string `json:"message" example:"Task completed successfully"`
-	XPEarned    int    `json:"xp_earned" example:"100"`
-	TaskID      int    `json:"task_id" example:"123"`
-	PlantsGrown int    `json:"plants_grown" example:"3"`
 }

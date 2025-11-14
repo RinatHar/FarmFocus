@@ -26,6 +26,8 @@ func NewSeedHandler(repo *repository.SeedRepo) *SeedHandler {
 // @Tags seeds
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
 // @Success 200 {array} model.Seed
 // @Failure 500 {object} map[string]string
 // @Router /seeds [get]
@@ -44,6 +46,8 @@ func (h *SeedHandler) GetAll(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "Seed ID"
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
 // @Success 200 {object} model.Seed
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
@@ -72,6 +76,8 @@ func (h *SeedHandler) GetByID(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param level query int true "Уровень семян"
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
 // @Success 200 {array} model.Seed
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -96,6 +102,8 @@ func (h *SeedHandler) GetByLevel(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param rarity query string true "Редкость семян (common, rare, epic, legendary)"
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
 // @Success 200 {array} model.Seed
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string

@@ -43,17 +43,11 @@ definitions:
     type: object
   handler.HabitCompletionResponse:
     properties:
-      habitId:
-        example: 123
-        type: integer
-      message:
-        example: Habit completed successfully
-        type: string
       plantsGrown:
         example: 3
         type: integer
       xpEarned:
-        example: 50
+        example: 150
         type: integer
     type: object
   handler.HabitCreateRequest:
@@ -84,6 +78,24 @@ definitions:
         type: string
       xpReward:
         example: 50
+        type: integer
+    type: object
+  handler.HabitIncrementResponse:
+    properties:
+      count:
+        example: 5
+        type: integer
+    type: object
+  handler.HabitResetResponse:
+    properties:
+      message:
+        example: Habit count reset successfully
+        type: string
+    type: object
+  handler.HabitUndoResponse:
+    properties:
+      xpEarned:
+        example: 150
         type: integer
     type: object
   handler.HabitUpdateRequest:
@@ -164,12 +176,13 @@ definitions:
         type: string
       id:
         type: integer
+      imgPath:
+        type: string
       isWithered:
         type: boolean
       seedId:
         type: integer
       seedName:
-        description: Дополнительные поля из семени
         type: string
       targetGrowth:
         type: integer
@@ -235,17 +248,11 @@ definitions:
     type: object
   handler.TaskCompletionResponse:
     properties:
-      message:
-        example: Task completed successfully
-        type: string
-      plants_grown:
+      plantsGrown:
         example: 3
         type: integer
-      task_id:
-        example: 123
-        type: integer
-      xp_earned:
-        example: 100
+      xpEarned:
+        example: 150
         type: integer
     type: object
   handler.TaskCreateRequest:
@@ -265,8 +272,11 @@ definitions:
       title:
         example: Завершить проект
         type: string
-      xpReward:
-        example: 100
+    type: object
+  handler.TaskUndoResponse:
+    properties:
+      xpEarned:
+        example: 150
         type: integer
     type: object
   handler.TaskUpdateRequest:
@@ -320,7 +330,7 @@ definitions:
     type: object
   handler.UserPlantCreateRequest:
     properties:
-      bedId:
+      cellNumber:
         example: 1
         type: integer
       seedId:
@@ -480,6 +490,8 @@ definitions:
         type: string
       id:
         type: integer
+      imgPlant:
+        type: string
       levelRequired:
         type: integer
       modification:
@@ -602,6 +614,8 @@ definitions:
         type: string
       seedId:
         type: integer
+      seedImgPlant:
+        type: string
       seedName:
         type: string
       targetGrowth:
@@ -633,6 +647,8 @@ definitions:
         type: string
       seedId:
         type: integer
+      seedImgPlant:
+        type: string
       seedName:
         type: string
       targetGrowth:
@@ -684,6 +700,8 @@ definitions:
         type: integer
       id:
         type: integer
+      isDrought:
+        type: boolean
       longestStreak:
         type: integer
       totalPlantHarvested:
@@ -1640,7 +1658,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Создает новую привычку для текущего пользователя
+      description: Создает новую привычку для текущего пользователя с базовым количеством
+        опыта с учетом count
       parameters:
       - description: User ID
         in: header
@@ -1687,7 +1706,8 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Удаляет привычку по ID
+      description: Удаляет привычку по ID, предварительно удаляя связанные записи
+        в логе прогресса
       parameters:
       - description: User ID
         in: header
@@ -1845,9 +1865,10 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Помечает привычку как выполненную, добавляет опыт пользователю,
-        создает запись в логе прогресса и увеличивает рост всех активных растений
-        пользователя на 1
+      description: Помечает привычку как выполненную, увеличивает счетчик, добавляет
+        опыт пользователю по формуле, создает запись в логе прогресса, увеличивает
+        рост всех активных растений пользователя на 1 и увеличивает стрик если это
+        первое выполнение сегодня
       parameters:
       - description: User ID
         in: header
@@ -1917,9 +1938,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handler.HabitIncrementResponse'
         "400":
           description: Bad Request
           schema:
@@ -1971,9 +1990,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handler.HabitResetResponse'
         "400":
           description: Bad Request
           schema:
@@ -2007,7 +2024,8 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Помечает привычку как невыполненную (сбрасывает статус)
+      description: Помечает привычку как невыполненную, уменьшает счетчик и возвращает
+        опыт обратно на основе последней записи в логе
       parameters:
       - description: User ID
         in: header
@@ -2022,8 +2040,10 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HabitUndoResponse'
         "400":
           description: Bad Request
           schema:
@@ -2058,6 +2078,12 @@ paths:
       consumes:
       - application/json
       description: Возвращает полный список всех доступных семян
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -2073,6 +2099,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - ApiKeyAuth: []
       summary: Получить все семена
       tags:
       - seeds
@@ -2182,6 +2210,11 @@ paths:
         name: id
         required: true
         type: integer
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -2207,6 +2240,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - ApiKeyAuth: []
       summary: Получить семя по ID
       tags:
       - seeds
@@ -2278,39 +2313,9 @@ paths:
         name: level
         required: true
         type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/model.Seed'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Получить семена по уровню
-      tags:
-      - seeds
-  /seeds/rarity:
-    get:
-      consumes:
-      - application/json
-      description: Возвращает список семян определенной редкости
-      parameters:
-      - description: Редкость семян (common, rare, epic, legendary)
-        in: query
-        name: rarity
+      - description: User ID
+        in: header
+        name: X-User-ID
         required: true
         type: string
       produces:
@@ -2334,6 +2339,50 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить семена по уровню
+      tags:
+      - seeds
+  /seeds/rarity:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список семян определенной редкости
+      parameters:
+      - description: Редкость семян (common, rare, epic, legendary)
+        in: query
+        name: rarity
+        required: true
+        type: string
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Seed'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
       summary: Получить семена по редкости
       tags:
       - seeds
@@ -2424,8 +2473,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Удаляет тег. Тег можно удалить только если к нему не привязаны
-        задачи.
+      description: Удаляет тег и сбрасывает его у всех связанных задач и привычек
       parameters:
       - description: User ID
         in: header
@@ -2692,7 +2740,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Создает новую задачу для текущего пользователя
+      description: Создает новую задачу для текущего пользователя с базовым количеством
+        опыта
       parameters:
       - description: User ID
         in: header
@@ -2739,7 +2788,8 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Удаляет задачу по ID
+      description: Удаляет задачу по ID, предварительно удаляя связанные записи в
+        логе прогресса
       parameters:
       - description: User ID
         in: header
@@ -2897,9 +2947,9 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Помечает задачу как выполненную, добавляет опыт пользователю, создает
-        запись в логе прогресса и увеличивает рост всех активных растений пользователя
-        на 1
+      description: Помечает задачу как выполненную, добавляет опыт пользователю по
+        формуле, создает запись в логе прогресса, увеличивает рост всех активных растений
+        пользователя на 1 и увеличивает стрик если это первое выполнение сегодня
       parameters:
       - description: User ID
         in: header
@@ -2951,7 +3001,8 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Помечает задачу как невыполненную (сбрасывает статус)
+      description: Помечает задачу как невыполненную и возвращает опыт обратно на
+        основе последней записи в логе
       parameters:
       - description: User ID
         in: header
@@ -2966,8 +3017,10 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TaskUndoResponse'
         "400":
           description: Bad Request
           schema:
@@ -3037,7 +3090,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Сажает новое растение на грядку, используя семя из инвентаря
+      description: Сажает новое растение на свободную грядку по cellNumber, используя
+        семя из инвентаря
       parameters:
       - description: User ID
         in: header
@@ -4046,7 +4100,8 @@ paths:
       consumes:
       - application/json
       description: Создает нового пользователя или обновляет существующего по MaxID.
-        При создании также создается статистика и начальные грядки.
+        При создании также создается статистика, начальные грядки, добавляется стартовый
+        набор семян и товары в магазин.
       parameters:
       - description: Данные пользователя
         in: body

@@ -9,6 +9,7 @@ import (
 
 	"github.com/RinatHar/FarmFocus/api/internal/model"
 	"github.com/RinatHar/FarmFocus/api/internal/repository"
+	"github.com/RinatHar/FarmFocus/api/internal/utils"
 	"github.com/labstack/echo/v4"
 )
 
@@ -35,7 +36,7 @@ func NewHabitHandler(
 
 // Create godoc
 // @Summary Создать новую привычку
-// @Description Создает новую привычку для текущего пользователя
+// @Description Создает новую привычку для текущего пользователя с базовым количеством опыта с учетом count
 // @Tags habits
 // @Accept json
 // @Produce json
@@ -58,6 +59,9 @@ func (h *HabitHandler) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
+	// Устанавливаем базовое количество опыта с учетом сложности и count
+	baseXP := utils.GetBaseXPForHabit(req.Difficulty, req.Count)
+
 	habit := model.Habit{
 		UserID:      userID,
 		Title:       req.Title,
@@ -68,7 +72,7 @@ func (h *HabitHandler) Create(c echo.Context) error {
 		Period:      req.Period,
 		Every:       req.Every,
 		StartDate:   req.StartDate,
-		XPReward:    req.XPReward,
+		XPReward:    baseXP,
 		TagID:       req.TagID,
 		CreatedAt:   time.Now(),
 	}
@@ -225,7 +229,7 @@ func (h *HabitHandler) Update(c echo.Context) error {
 
 // Delete godoc
 // @Summary Удалить привычку
-// @Description Удаляет привычку по ID
+// @Description Удаляет привычку по ID, предварительно удаляя связанные записи в логе прогресса
 // @Tags habits
 // @Accept json
 // @Produce json
@@ -249,11 +253,22 @@ func (h *HabitHandler) Delete(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid habit ID"})
 	}
 
-	err = h.repo.Delete(context.Background(), id, userID)
-	if err != nil {
+	// Проверяем существование привычки и принадлежность пользователю
+	if _, err := h.repo.GetByID(context.Background(), id, userID); err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Удаляем связанные записи в progress_log
+	if err := h.progressRepo.DeleteByHabitID(context.Background(), id); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Удаляем привычку
+	err = h.repo.Delete(context.Background(), id, userID)
+	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
@@ -262,7 +277,7 @@ func (h *HabitHandler) Delete(c echo.Context) error {
 
 // MarkAsDone godoc
 // @Summary Пометить привычку как выполненную
-// @Description Помечает привычку как выполненную, добавляет опыт пользователю, создает запись в логе прогресса и увеличивает рост всех активных растений пользователя на 1
+// @Description Помечает привычку как выполненную, увеличивает счетчик, добавляет опыт пользователю по формуле, создает запись в логе прогресса, увеличивает рост всех активных растений пользователя на 1 и увеличивает стрик если это первое выполнение сегодня
 // @Tags habits
 // @Accept json
 // @Produce json
@@ -286,7 +301,7 @@ func (h *HabitHandler) MarkAsDone(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid habit ID"})
 	}
 
-	// Получаем привычку чтобы узнать награду
+	// Получаем привычку
 	habit, err := h.repo.GetByID(context.Background(), id, userID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -295,17 +310,60 @@ func (h *HabitHandler) MarkAsDone(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Помечаем привычку как выполненную
-	err = h.repo.MarkAsDone(context.Background(), id, userID)
+	// Проверяем, не выполнена ли уже привычка
+	if habit.Done {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Habit is already marked as done",
+		})
+	}
+
+	// Получаем статистику пользователя для расчета уровня
+	stats, err := h.userStatRepo.GetByUserID(context.Background(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Рассчитываем опыт по формуле: базовый опыт * (коэф уровня + коэф сложности)
+	userLevel := stats.Level()
+	calculatedXP := utils.CalculateTaskXP(habit.XPReward, userLevel, habit.Difficulty)
+
+	// Проверяем, выполнены ли сегодня задачи или привычки
+	hasCompletedTaskToday, err := h.progressRepo.HasUserCompletedTaskToday(context.Background(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	hasCompletedHabitToday, err := h.progressRepo.HasUserCompletedHabitToday(context.Background(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Если сегодня еще не выполнено ни задач, ни привычек - увеличиваем стрик
+	shouldIncrementStreak := !hasCompletedTaskToday && !hasCompletedHabitToday
+
+	// Если это первое выполнение сегодня и пользователь в засухе - сбрасываем засуху
+	if shouldIncrementStreak && stats.IsDrought {
+		h.userStatRepo.ResetDrought(context.Background(), userID)
+	}
+
+	// Помечаем привычку как выполненную и увеличиваем счетчик
+	err = h.repo.MarkAsDoneAndIncrementCount(context.Background(), id, userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Увеличиваем стрик если это первое выполнение сегодня
+	if shouldIncrementStreak {
+		if err := h.userStatRepo.IncrementStreak(context.Background(), userID); err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
 	}
 
 	// Создаем запись в progress_log
 	progressLog := &model.ProgressLog{
 		UserID:     userID,
 		HabitID:    &id,
-		XPEarned:   habit.XPReward,
+		XPEarned:   calculatedXP,
 		GoldEarned: 0,
 		CreatedAt:  time.Now(),
 	}
@@ -315,8 +373,8 @@ func (h *HabitHandler) MarkAsDone(c echo.Context) error {
 	}
 
 	// Добавляем опыт пользователю
-	if habit.XPReward > 0 {
-		if err := h.userStatRepo.AddExperience(context.Background(), userID, int64(habit.XPReward)); err != nil {
+	if calculatedXP > 0 {
+		if err := h.userStatRepo.AddExperience(context.Background(), userID, int64(calculatedXP)); err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 	}
@@ -328,97 +386,21 @@ func (h *HabitHandler) MarkAsDone(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, HabitCompletionResponse{
-		Message:     "Habit completed successfully",
-		XPEarned:    habit.XPReward,
-		HabitID:     id,
+		XPEarned:    calculatedXP,
 		PlantsGrown: plantsGrown,
 	})
 }
 
-// IncrementCount godoc
-// @Summary Увеличить счетчик привычки
-// @Description Увеличивает счетчик привычки на 1
-// @Tags habits
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Param X-User-ID header string true "User ID"
-// @Param id path int true "Habit ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /habits/{id}/increment [patch]
-func (h *HabitHandler) IncrementCount(c echo.Context) error {
-	userID, err := h.GetUserIDFromContext(c)
-	if err != nil {
-		return err
-	}
-
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid habit ID"})
-	}
-
-	err = h.repo.IncrementCount(context.Background(), id, userID)
-	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
-		}
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-
-	return c.JSON(http.StatusOK, map[string]string{"message": "Habit count incremented"})
-}
-
-// ResetCount godoc
-// @Summary Сбросить счетчик привычки
-// @Description Сбрасывает счетчик привычки до 0
-// @Tags habits
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Param X-User-ID header string true "User ID"
-// @Param id path int true "Habit ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /habits/{id}/reset [patch]
-func (h *HabitHandler) ResetCount(c echo.Context) error {
-	userID, err := h.GetUserIDFromContext(c)
-	if err != nil {
-		return err
-	}
-
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid habit ID"})
-	}
-
-	err = h.repo.ResetCount(context.Background(), id, userID)
-	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
-		}
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-
-	return c.JSON(http.StatusOK, map[string]string{"message": "Habit count reset"})
-}
-
 // MarkAsUndone godoc
 // @Summary Пометить привычку как невыполненную
-// @Description Помечает привычку как невыполненную (сбрасывает статус)
+// @Description Помечает привычку как невыполненную, уменьшает счетчик и возвращает опыт обратно на основе последней записи в логе
 // @Tags habits
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Param X-User-ID header string true "User ID"
 // @Param id path int true "Habit ID"
-// @Success 204 "No Content"
+// @Success 200 {object} HabitUndoResponse
 // @Failure 400 {object} map[string]string
 // @Failure 401 {object} map[string]string
 // @Failure 404 {object} map[string]string
@@ -435,7 +417,8 @@ func (h *HabitHandler) MarkAsUndone(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid habit ID"})
 	}
 
-	err = h.repo.MarkAsUndone(context.Background(), id, userID)
+	// Получаем привычку для проверки существования и текущего состояния
+	habit, err := h.repo.GetByID(context.Background(), id, userID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
@@ -443,7 +426,158 @@ func (h *HabitHandler) MarkAsUndone(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	// Проверяем, выполнена ли привычка
+	if !habit.Done {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Habit is not marked as done",
+		})
+	}
+
+	// Проверяем, что счетчик больше 0
+	if habit.Count <= 0 {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Habit count is already 0",
+		})
+	}
+
+	// Ищем последнюю запись в progress_log для этой привычки
+	lastProgress, err := h.progressRepo.GetLastByHabitID(context.Background(), id)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": "No completion record found for this habit",
+			})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Проверяем, что запись содержит положительный опыт (привычка была выполнена)
+	if lastProgress.XPEarned <= 0 {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Habit was not completed or already undone",
+		})
+	}
+
+	xpToReturn := lastProgress.XPEarned
+
+	// Помечаем привычку как невыполненную и уменьшаем счетчик
+	err = h.repo.MarkAsUndoneAndDecrementCount(context.Background(), id, userID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Возвращаем опыт (вычитаем)
+	if xpToReturn > 0 {
+		if err := h.userStatRepo.RemoveExperience(context.Background(), userID, int64(xpToReturn)); err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+	}
+
+	// Создаем запись в progress_log о возврате опыта
+	progressLog := &model.ProgressLog{
+		UserID:     userID,
+		HabitID:    &id,
+		XPEarned:   -xpToReturn, // Отрицательное значение для возврата
+		GoldEarned: 0,
+		CreatedAt:  time.Now(),
+	}
+
+	if err := h.progressRepo.Create(context.Background(), progressLog); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, HabitUndoResponse{
+		XPEarned: -xpToReturn,
+	})
+}
+
+// IncrementCount godoc
+// @Summary Увеличить счетчик привычки
+// @Description Увеличивает счетчик привычки на 1
+// @Tags habits
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Habit ID"
+// @Success 200 {object} HabitIncrementResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /habits/{id}/increment [patch]
+func (h *HabitHandler) IncrementCount(c echo.Context) error {
+	userID, err := h.GetUserIDFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid habit ID"})
+	}
+
+	// Увеличиваем счетчик
+	err = h.repo.IncrementCount(context.Background(), id, userID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Получаем обновленную привычку для ответа
+	habit, err := h.repo.GetByID(context.Background(), id, userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, HabitIncrementResponse{
+		Count: habit.Count,
+	})
+}
+
+// ResetCount godoc
+// @Summary Сбросить счетчик привычки
+// @Description Сбрасывает счетчик привычки до 0
+// @Tags habits
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Habit ID"
+// @Success 200 {object} HabitResetResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /habits/{id}/reset [patch]
+func (h *HabitHandler) ResetCount(c echo.Context) error {
+	userID, err := h.GetUserIDFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid habit ID"})
+	}
+
+	// Сбрасываем счетчик
+	err = h.repo.ResetCount(context.Background(), id, userID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, HabitResetResponse{
+		Message: "Habit count reset successfully",
+	})
 }
 
 // growUserPlants увеличивает рост всех активных растений пользователя
@@ -466,6 +600,27 @@ func (h *HabitHandler) growUserPlants(ctx context.Context, userID int64, growthA
 }
 
 // DTO для запросов
+
+// HabitCompletionResponse представляет ответ при завершении привычки
+type HabitCompletionResponse struct {
+	XPEarned    int `json:"xpEarned" example:"150"`
+	PlantsGrown int `json:"plantsGrown" example:"3"`
+}
+
+// HabitUndoResponse представляет ответ при отмене выполнения привычки
+type HabitUndoResponse struct {
+	XPEarned int `json:"xpEarned" example:"150"`
+}
+
+// HabitIncrementResponse представляет ответ при увеличении счетчика
+type HabitIncrementResponse struct {
+	Count int `json:"count" example:"5"`
+}
+
+// HabitResetResponse представляет ответ при сбросе счетчика
+type HabitResetResponse struct {
+	Message string `json:"message" example:"Habit count reset successfully"`
+}
 
 // HabitCreateRequest представляет запрос на создание привычки
 type HabitCreateRequest struct {
@@ -492,12 +647,4 @@ type HabitUpdateRequest struct {
 	StartDate   time.Time `json:"startDate" example:"2024-01-20T00:00:00Z"`
 	XPReward    int       `json:"xpReward" example:"75"`
 	TagID       *int      `json:"tagId,omitempty" example:"2"`
-}
-
-// HabitCompletionResponse представляет ответ при завершении привычки
-type HabitCompletionResponse struct {
-	Message     string `json:"message" example:"Habit completed successfully"`
-	XPEarned    int    `json:"xpEarned" example:"50"`
-	HabitID     int    `json:"habitId" example:"123"`
-	PlantsGrown int    `json:"plantsGrown" example:"3"`
 }

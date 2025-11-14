@@ -13,11 +13,21 @@ import (
 
 type TagHandler struct {
 	BaseHandler
-	repo *repository.TagRepo
+	repo      *repository.TagRepo
+	taskRepo  *repository.TaskRepo
+	habitRepo *repository.HabitRepo
 }
 
-func NewTagHandler(repo *repository.TagRepo) *TagHandler {
-	return &TagHandler{repo: repo}
+func NewTagHandler(
+	repo *repository.TagRepo,
+	taskRepo *repository.TaskRepo,
+	habitRepo *repository.HabitRepo,
+) *TagHandler {
+	return &TagHandler{
+		repo:      repo,
+		taskRepo:  taskRepo,
+		habitRepo: habitRepo,
+	}
 }
 
 // GetAll godoc
@@ -177,7 +187,7 @@ func (h *TagHandler) Update(c echo.Context) error {
 
 // Delete godoc
 // @Summary Удалить тег
-// @Description Удаляет тег. Тег можно удалить только если к нему не привязаны задачи.
+// @Description Удаляет тег и сбрасывает его у всех связанных задач и привычек
 // @Tags tags
 // @Accept json
 // @Produce json
@@ -203,7 +213,20 @@ func (h *TagHandler) Delete(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid tag ID"})
 	}
 
-	err = h.repo.Delete(context.Background(), id, userID)
+	ctx := context.Background()
+
+	// Сначала сбрасываем тег у всех задач пользователя
+	if err := h.taskRepo.ResetTag(ctx, userID, id); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to reset tag in tasks: " + err.Error()})
+	}
+
+	// Сбрасываем тег у всех привычек пользователя
+	if err := h.habitRepo.ResetTag(ctx, userID, id); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to reset tag in habits: " + err.Error()})
+	}
+
+	// Теперь удаляем сам тег
+	err = h.repo.Delete(ctx, id, userID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})

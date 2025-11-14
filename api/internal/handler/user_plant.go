@@ -106,7 +106,7 @@ func (h *UserPlantHandler) GetUserPlantByID(c echo.Context) error {
 
 // CreateUserPlant godoc
 // @Summary Посадить новое растение
-// @Description Сажает новое растение на грядку, используя семя из инвентаря
+// @Description Сажает новое растение на свободную грядку по cellNumber, используя семя из инвентаря
 // @Tags user-plants
 // @Accept json
 // @Produce json
@@ -133,25 +133,22 @@ func (h *UserPlantHandler) CreateUserPlant(c echo.Context) error {
 
 	ctx := context.Background()
 
-	// Проверяем, что грядка принадлежит пользователю и свободна
-	bed, err := h.bedRepo.GetByID(ctx, req.BedID)
+	// Ищем грядку по cellNumber у пользователя
+	bed, err := h.bedRepo.GetByCellNumber(ctx, userID, req.CellNumber)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			return c.JSON(http.StatusNotFound, map[string]string{"error": "Bed not found"})
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "Bed not found for this cell number"})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	if bed.UserID != userID {
-		return c.JSON(http.StatusForbidden, map[string]string{"error": "Bed does not belong to user"})
-	}
-
+	// Проверяем, что грядка не заблокирована
 	if bed.IsLocked {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Bed is locked"})
 	}
 
 	// Проверяем, что грядка свободна
-	existingPlant, err := h.repo.GetByBed(ctx, req.BedID)
+	existingPlant, err := h.repo.GetByBed(ctx, bed.ID)
 	if err != nil && !strings.Contains(err.Error(), "not found") {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -184,7 +181,7 @@ func (h *UserPlantHandler) CreateUserPlant(c echo.Context) error {
 	plant := &model.UserPlant{
 		UserID:        userID,
 		SeedID:        req.SeedID,
-		BedID:         req.BedID,
+		BedID:         bed.ID, // Используем найденный bed.ID
 		CurrentGrowth: 0,
 	}
 
@@ -473,8 +470,8 @@ func (h *UserPlantHandler) GetGrowingPlants(c echo.Context) error {
 
 // UserPlantCreateRequest представляет запрос на посадку растения
 type UserPlantCreateRequest struct {
-	SeedID int `json:"seedId" example:"1"`
-	BedID  int `json:"bedId" example:"1"`
+	SeedID     int `json:"seedId" example:"1"`
+	CellNumber int `json:"cellNumber" example:"1"`
 }
 
 // UserPlantGrowthRequest представляет запрос на добавление роста

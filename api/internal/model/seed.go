@@ -6,6 +6,7 @@ type Seed struct {
 	ID            int       `json:"id"`
 	Name          string    `json:"name"`
 	Icon          string    `json:"icon,omitempty"`
+	ImgPlant      string    `json:"imgPlant,omitempty"`
 	LevelRequired int       `json:"levelRequired"`
 	TargetGrowth  int       `json:"targetGrowth"`
 	Rarity        string    `json:"rarity"`

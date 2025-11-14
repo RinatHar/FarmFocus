@@ -14,7 +14,7 @@ type DroughtScheduler struct {
 	habitRepo     *repository.HabitRepo
 	userPlantRepo *repository.UserPlantRepo
 	userRepo      *repository.UserRepo
-	checkInterval time.Duration
+	checkTime     string // Формат "HH:MM", например "03:00"
 }
 
 func NewDroughtScheduler(
@@ -22,25 +22,62 @@ func NewDroughtScheduler(
 	habitRepo *repository.HabitRepo,
 	userPlantRepo *repository.UserPlantRepo,
 	userRepo *repository.UserRepo,
-	checkInterval time.Duration,
+	checkTime string,
 ) *DroughtScheduler {
 	return &DroughtScheduler{
 		taskRepo:      taskRepo,
 		habitRepo:     habitRepo,
 		userPlantRepo: userPlantRepo,
 		userRepo:      userRepo,
-		checkInterval: checkInterval,
+		checkTime:     checkTime,
 	}
 }
 
 func (s *DroughtScheduler) Start() {
-	log.Println("Starting drought scheduler...")
-	ticker := time.NewTicker(s.checkInterval)
-	go func() {
-		for range ticker.C {
-			s.checkDroughtForAllUsers()
+	log.Printf("Starting drought scheduler, will run daily at %s", s.checkTime)
+
+	// Первая проверка сразу при старте
+	s.checkDroughtForAllUsers()
+
+	// Запускаем ежедневную проверку в указанное время
+	go s.runDailyAt(s.checkTime)
+}
+
+func (s *DroughtScheduler) runDailyAt(timeStr string) {
+	for {
+		// Парсим время выполнения
+		executionTime, err := time.Parse("15:04", timeStr)
+		if err != nil {
+			log.Printf("Error parsing time %s: %v", timeStr, err)
+			return
 		}
-	}()
+
+		now := time.Now()
+
+		// Вычисляем следующее время выполнения
+		next := time.Date(
+			now.Year(), now.Month(), now.Day(),
+			executionTime.Hour(), executionTime.Minute(), 0, 0,
+			now.Location(),
+		)
+
+		// Если время уже прошло сегодня, планируем на завтра
+		if now.After(next) {
+			next = next.Add(24 * time.Hour)
+		}
+
+		duration := next.Sub(now)
+		log.Printf("Next drought check at: %s (in %v)", next.Format("2006-01-02 15:04:05"), duration)
+
+		// Ждем до времени выполнения
+		time.Sleep(duration)
+
+		// Выполняем проверку
+		s.checkDroughtForAllUsers()
+
+		// Ждем 24 часа до следующего выполнения
+		time.Sleep(24 * time.Hour)
+	}
 }
 
 func (s *DroughtScheduler) checkDroughtForAllUsers() {

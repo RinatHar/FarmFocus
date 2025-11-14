@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"time"
 
 	_ "github.com/RinatHar/FarmFocus/api/docs" // важно: импорт сгенерированной документации
 	"github.com/RinatHar/FarmFocus/api/internal/config"
@@ -105,21 +104,19 @@ func main() {
 		habitRepo,
 		userPlantRepo,
 		userRepo,
-		24*time.Hour, // Проверка раз в день
+		"02:00",
 	)
 
 	habitResetScheduler := scheduler.NewHabitResetScheduler(
 		habitRepo,
 		userRepo,
-		24*time.Hour, // Сброс раз в день
+		"02:00",
 	)
 
 	shopRefreshScheduler := scheduler.NewShopRefreshScheduler(
 		goodRepo,
-		seedRepo,
-		bedRepo,
 		userRepo,
-		24*time.Hour, // Обновление магазина раз в день
+		"02:00",
 	)
 
 	// Запускаем планировщики
@@ -144,7 +141,7 @@ func main() {
 	userStatHandler := handler.NewUserStatHandler(userStatRepo)
 	taskHandler := handler.NewTaskHandler(taskRepo, progressLogRepo, userStatRepo, userPlantRepo)
 	habitHandler := handler.NewHabitHandler(habitRepo, progressLogRepo, userStatRepo, userPlantRepo)
-	tagHandler := handler.NewTagHandler(tagRepo)
+	tagHandler := handler.NewTagHandler(tagRepo, taskRepo, habitRepo)
 	seedHandler := handler.NewSeedHandler(seedRepo)
 	userSeedHandler := handler.NewUserSeedHandler(userSeedRepo)
 	bedHandler := handler.NewBedHandler(bedRepo)

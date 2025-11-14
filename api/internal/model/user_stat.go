@@ -11,6 +11,7 @@ type UserStat struct {
 	LongestStreak       int       `json:"longestStreak"`
 	TotalTasksCompleted int       `json:"totalTasksCompleted"`
 	TotalPlantHarvested int       `json:"totalPlantHarvested"`
+	IsDrought           bool      `json:"isDrought"`
 	UpdatedAt           time.Time `json:"updatedAt"`
 }
 

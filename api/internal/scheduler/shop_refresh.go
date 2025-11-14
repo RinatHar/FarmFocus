@@ -2,8 +2,8 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 	"log"
-	"math/rand"
 	"time"
 
 	"github.com/RinatHar/FarmFocus/api/internal/model"
@@ -11,40 +11,59 @@ import (
 )
 
 type ShopRefreshScheduler struct {
-	goodRepo        *repository.GoodRepo
-	seedRepo        *repository.SeedRepo
-	bedRepo         *repository.BedRepo
-	userRepo        *repository.UserRepo
-	refreshInterval time.Duration
+	goodRepo *repository.GoodRepo
+	userRepo *repository.UserRepo
+	shopTime string // Формат "HH:MM"
 }
 
 func NewShopRefreshScheduler(
 	goodRepo *repository.GoodRepo,
-	seedRepo *repository.SeedRepo,
-	bedRepo *repository.BedRepo,
 	userRepo *repository.UserRepo,
-	refreshInterval time.Duration,
+	shopTime string, // Время в формате "HH:MM"
 ) *ShopRefreshScheduler {
 	return &ShopRefreshScheduler{
-		goodRepo:        goodRepo,
-		seedRepo:        seedRepo,
-		bedRepo:         bedRepo,
-		userRepo:        userRepo,
-		refreshInterval: refreshInterval,
+		goodRepo: goodRepo,
+		userRepo: userRepo,
+		shopTime: shopTime,
 	}
 }
 
 func (s *ShopRefreshScheduler) Start() {
-	log.Println("Starting shop refresh scheduler...")
-	// Инициализируем random
-	rand.Seed(time.Now().UnixNano())
+	log.Printf("Starting shop refresh scheduler, will run daily at %s", s.shopTime)
 
-	ticker := time.NewTicker(s.refreshInterval)
-	go func() {
-		for range ticker.C {
-			s.refreshShopForAllUsers()
+	// Первое обновление сразу при старте
+	s.refreshShopForAllUsers()
+
+	// Запускаем ежедневное обновление в указанное время
+	go s.runDailyAt(s.shopTime)
+}
+
+func (s *ShopRefreshScheduler) runDailyAt(timeStr string) {
+	for {
+		executionTime, err := time.Parse("15:04", timeStr)
+		if err != nil {
+			log.Printf("Error parsing time %s: %v", timeStr, err)
+			return
 		}
-	}()
+
+		now := time.Now()
+		next := time.Date(
+			now.Year(), now.Month(), now.Day(),
+			executionTime.Hour(), executionTime.Minute(), 0, 0,
+			now.Location(),
+		)
+
+		if now.After(next) {
+			next = next.Add(24 * time.Hour)
+		}
+
+		duration := next.Sub(now)
+		log.Printf("Next shop refresh at: %s (in %v)", next.Format("2006-01-02 15:04:05"), duration)
+
+		time.Sleep(duration)
+		s.refreshShopForAllUsers()
+		time.Sleep(24 * time.Hour)
+	}
 }
 
 func (s *ShopRefreshScheduler) refreshShopForAllUsers() {
@@ -57,112 +76,60 @@ func (s *ShopRefreshScheduler) refreshShopForAllUsers() {
 	}
 
 	log.Printf("Refreshing shop for %d users", len(users))
+	refreshedCount := 0
 	for _, user := range users {
-		s.refreshShopForUser(ctx, user.ID)
+		if err := s.refreshShopForUser(ctx, user.ID); err != nil {
+			log.Printf("Error refreshing shop for user %d: %v", user.ID, err)
+		} else {
+			refreshedCount++
+		}
 	}
+	log.Printf("Shop refresh completed for %d users", refreshedCount)
 }
 
-func (s *ShopRefreshScheduler) refreshShopForUser(ctx context.Context, userID int64) {
+func (s *ShopRefreshScheduler) refreshShopForUser(ctx context.Context, userID int64) error {
 	// Удаляем старые товары
 	err := s.goodRepo.DeleteByUser(ctx, userID)
 	if err != nil {
 		log.Printf("Error deleting old goods for user %d: %v", userID, err)
-		return
+		return err
 	}
 
-	// Генерируем новые товары
-	newGoods := s.generateRandomGoods(ctx, userID)
-
-	for _, good := range newGoods {
-		err := s.goodRepo.Create(ctx, &good)
-		if err != nil {
-			log.Printf("Error creating good for user %d: %v", userID, err)
-		}
+	// Создаем фиксированный набор товаров
+	if err := s.createShopGoods(ctx, userID); err != nil {
+		log.Printf("Error creating shop goods for user %d: %v", userID, err)
+		return err
 	}
 
-	log.Printf("Refreshed shop for user %d with %d goods", userID, len(newGoods))
+	log.Printf("Refreshed shop for user %d", userID)
+	return nil
 }
 
-func (s *ShopRefreshScheduler) generateRandomGoods(ctx context.Context, userID int64) []model.Good {
-	var goods []model.Good
-
-	// Генерируем случайное количество товаров (3-8)
-	numGoods := rand.Intn(6) + 3
-
-	for i := 0; i < numGoods; i++ {
-		good := s.generateRandomGood(ctx, userID)
-		goods = append(goods, good)
+func (s *ShopRefreshScheduler) createShopGoods(ctx context.Context, userID int64) error {
+	// Фиксированный набор товаров для магазина
+	shopGoods := []model.Good{
+		{
+			UserID:   userID,
+			Type:     "seed",
+			IDGood:   2, // Баклажан
+			Quantity: 5,
+			Cost:     4,
+		},
+		{
+			UserID:   userID,
+			Type:     "seed",
+			IDGood:   1, // Пшеница
+			Quantity: 10,
+			Cost:     1,
+		},
 	}
 
-	return goods
-}
-
-func (s *ShopRefreshScheduler) generateRandomGood(ctx context.Context, userID int64) model.Good {
-	goodTypes := []string{"seed", "bed", "tool", "fertilizer"}
-	goodType := goodTypes[rand.Intn(len(goodTypes))]
-
-	var idGood int
-	var cost int
-
-	switch goodType {
-	case "seed":
-		seeds, err := s.seedRepo.GetAll(ctx)
-		if err == nil && len(seeds) > 0 {
-			seed := seeds[rand.Intn(len(seeds))]
-			idGood = seed.ID
-			cost = rand.Intn(50) + 10
-		} else {
-			// Fallback
-			idGood = 1
-			cost = 15
+	// Создаем каждый товар
+	for _, good := range shopGoods {
+		if err := s.goodRepo.CreateOrUpdate(ctx, &good); err != nil {
+			return fmt.Errorf("failed to create good (type: %s, id: %d): %w", good.Type, good.IDGood, err)
 		}
-
-	case "bed":
-		beds, err := s.bedRepo.GetAll(ctx)
-		if err == nil && len(beds) > 0 {
-			bed := beds[rand.Intn(len(beds))]
-			idGood = bed.ID
-			cost = rand.Intn(100) + 50
-		} else {
-			// Fallback
-			idGood = 1
-			cost = 50
-		}
-
-	case "tool":
-		tools := []struct {
-			id      int
-			minCost int
-			maxCost int
-		}{
-			{1, 20, 40},
-			{2, 40, 80},
-			{3, 100, 200},
-		}
-		tool := tools[rand.Intn(len(tools))]
-		idGood = tool.id
-		cost = rand.Intn(tool.maxCost-tool.minCost) + tool.minCost
-
-	case "fertilizer":
-		fertilizers := []struct {
-			id      int
-			minCost int
-			maxCost int
-		}{
-			{1, 30, 60},
-			{2, 50, 100},
-			{3, 80, 150},
-		}
-		fertilizer := fertilizers[rand.Intn(len(fertilizers))]
-		idGood = fertilizer.id
-		cost = rand.Intn(fertilizer.maxCost-fertilizer.minCost) + fertilizer.minCost
 	}
 
-	return model.Good{
-		UserID:   userID,
-		Type:     goodType,
-		IDGood:   idGood,
-		Quantity: rand.Intn(5) + 1, // 1-5 штук
-		Cost:     cost,
-	}
+	return nil
 }

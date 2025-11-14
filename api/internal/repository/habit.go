@@ -382,3 +382,39 @@ func (r *HabitRepo) GetAllUsersWithHabits(ctx context.Context) ([]model.User, er
 	}
 	return users, nil
 }
+
+// MarkAsDoneAndIncrementCount помечает привычку как выполненную и увеличивает счетчик
+func (r *HabitRepo) MarkAsDoneAndIncrementCount(ctx context.Context, id int, userID int64) error {
+	query := `UPDATE habit SET done = true, count = count + 1 WHERE id = $1 AND user_id = $2`
+	result, err := r.db.Exec(ctx, query, id, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("habit with id=%d not found or does not belong to user", id)
+	}
+	return nil
+}
+
+// MarkAsUndoneAndDecrementCount помечает привычку как невыполненную и уменьшает счетчик
+func (r *HabitRepo) MarkAsUndoneAndDecrementCount(ctx context.Context, id int, userID int64) error {
+	query := `UPDATE habit SET done = false, count = GREATEST(0, count - 1) WHERE id = $1 AND user_id = $2`
+	result, err := r.db.Exec(ctx, query, id, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("habit with id=%d not found or does not belong to user", id)
+	}
+	return nil
+}
+
+func (r *HabitRepo) ResetTag(ctx context.Context, userID int64, tagID int) error {
+	query := `UPDATE habit SET tag_id = NULL WHERE user_id = $1 AND tag_id = $2`
+	_, err := r.db.Exec(ctx, query, userID, tagID)
+	return err
+}
