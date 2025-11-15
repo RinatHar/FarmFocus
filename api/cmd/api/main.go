@@ -38,28 +38,11 @@ func main() {
 
 	// CORS middleware
 	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-		AllowOrigins: []string{
-			"*",
-			"https://eat-well.online",
-			"http://10.155.36.40:3000",
-		},
-		AllowMethods: []string{
-			echo.GET,
-			echo.POST,
-			echo.PUT,
-			echo.DELETE,
-			echo.PATCH,
-			echo.OPTIONS,
-		},
-		AllowHeaders: []string{
-			echo.HeaderOrigin,
-			echo.HeaderContentType,
-			echo.HeaderAccept,
-			echo.HeaderAuthorization,
-			"X-User-ID", // ваш кастомный заголовок
-		},
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"*"},
+		AllowHeaders: []string{"*"},
 		AllowCredentials: true,
-		MaxAge:           86400,
+		MaxAge: 86400,
 	}))
 
 	// Middleware
