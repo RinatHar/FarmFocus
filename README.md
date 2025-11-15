@@ -7,3 +7,7 @@
 ```bash
 docker-compose up -d --build
 ```
+3. Открыть в браузере по ссылке: 
+```bash
+http://localhost:3000/
+```
