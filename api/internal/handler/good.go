@@ -12,11 +12,27 @@ import (
 
 type GoodHandler struct {
 	BaseHandler
-	repo *repository.GoodRepo
+	repo         *repository.GoodRepo
+	userStatRepo *repository.UserStatRepo
+	userSeedRepo *repository.UserSeedRepo
+	bedRepo      *repository.BedRepo
+	seedRepo     *repository.SeedRepo
 }
 
-func NewGoodHandler(repo *repository.GoodRepo) *GoodHandler {
-	return &GoodHandler{repo: repo}
+func NewGoodHandler(
+	repo *repository.GoodRepo,
+	userStatRepo *repository.UserStatRepo,
+	userSeedRepo *repository.UserSeedRepo,
+	bedRepo *repository.BedRepo,
+	seedRepo *repository.SeedRepo,
+) *GoodHandler {
+	return &GoodHandler{
+		repo:         repo,
+		userStatRepo: userStatRepo,
+		userSeedRepo: userSeedRepo,
+		bedRepo:      bedRepo,
+		seedRepo:     seedRepo,
+	}
 }
 
 // GetUserGoods godoc
@@ -366,6 +382,141 @@ func (h *GoodHandler) CreateBatchGoods(c echo.Context) error {
 	return c.JSON(http.StatusCreated, createdGoods)
 }
 
+// BuyGood godoc
+// @Summary Купить товар
+// @Description Покупает один товар из магазина, списывая золото и добавляя товар в инвентарь
+// @Tags goods
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param X-User-ID header string true "User ID"
+// @Param id path int true "Good ID"
+// @Success 200 {object} BuyGoodResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /goods/{id}/buy [post]
+func (h *GoodHandler) BuyGood(c echo.Context) error {
+	userID, err := h.GetUserIDFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	// Используем "id" как в роутере
+	goodID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid good ID"})
+	}
+
+	ctx := context.Background()
+
+	// Получаем товар
+	good, err := h.repo.GetByID(ctx, goodID)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "good not found"})
+	}
+
+	// Проверяем, что товар принадлежит пользователю (магазин пользователя)
+	if good.UserID != userID {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "access denied"})
+	}
+
+	// Проверяем доступное количество
+	if good.Quantity < 1 {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "good is out of stock",
+		})
+	}
+
+	// Получаем статистику пользователя для проверки золота
+	stat, err := h.userStatRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Проверяем достаточно ли золота
+	if stat.Gold < int64(good.Cost) {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "not enough gold"})
+	}
+
+	// Списываем золото
+	if err := h.userStatRepo.AddGold(ctx, userID, -int64(good.Cost)); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to deduct gold"})
+	}
+
+	// Уменьшаем количество товара в магазине на 1
+	newQuantity := good.Quantity - 1
+	if err := h.repo.UpdateQuantity(ctx, goodID, newQuantity); err != nil {
+		// Если не удалось обновить количество, возвращаем золото
+		h.userStatRepo.AddGold(ctx, userID, int64(good.Cost))
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to update good quantity"})
+	}
+
+	var purchasedItem interface{}
+
+	// Добавляем товар в инвентарь пользователя в зависимости от типа
+	switch good.Type {
+	case "seed":
+		// Добавляем семена в инвентарь
+		if err := h.userSeedRepo.AddOrUpdateQuantity(ctx, userID, good.IDGood, 1); err != nil {
+			// Если не удалось добавить в инвентарь, возвращаем товар и золото
+			h.repo.UpdateQuantity(ctx, goodID, good.Quantity)
+			h.userStatRepo.AddGold(ctx, userID, int64(good.Cost))
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to add seeds to inventory"})
+		}
+
+		// Получаем детали семени для ответа
+		seed, err := h.seedRepo.GetByID(ctx, good.IDGood)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to get seed details"})
+		}
+
+		purchasedItem = SeedItem{
+			ID:           seed.ID,
+			Name:         seed.Name,
+			Icon:         seed.Icon,
+			ImgPlant:     seed.ImgPlant,
+			TargetGrowth: seed.TargetGrowth,
+			Rarity:       seed.Rarity,
+		}
+
+	case "bed":
+		// Разблокируем грядку
+		unlockedBed, err := h.bedRepo.UnlockNextBed(ctx, userID)
+		if err != nil {
+			// Если не удалось разблокировать, возвращаем товар и золото
+			h.repo.UpdateQuantity(ctx, goodID, good.Quantity)
+			h.userStatRepo.AddGold(ctx, userID, int64(good.Cost))
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to unlock bed"})
+		}
+
+		purchasedItem = UnlockedBedInfo{
+			ID:         unlockedBed.ID,
+			CellNumber: unlockedBed.CellNumber,
+			IsLocked:   unlockedBed.IsLocked,
+		}
+
+	default:
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "unsupported good type"})
+	}
+
+	// Получаем обновленный товар
+	updatedGood, _ := h.repo.GetByID(ctx, goodID)
+
+	return c.JSON(http.StatusOK, BuyGoodResponse{
+		GoodID:        goodID,
+		Quantity:      1,
+		TotalCost:     good.Cost,
+		Remaining:     updatedGood.Quantity,
+		Message:       "Purchase successful",
+		ItemType:      good.Type,
+		ItemID:        good.IDGood,
+		PurchasedItem: purchasedItem,
+	})
+}
+
 // Вспомогательные функции и DTO
 
 func isValidGoodType(goodType string) bool {
@@ -373,6 +524,23 @@ func isValidGoodType(goodType string) bool {
 		"seed": true, "bed": true, "tool": true, "fertilizer": true,
 	}
 	return validTypes[goodType]
+}
+
+type BuyGoodResponse struct {
+	GoodID        int         `json:"goodId"`
+	Quantity      int         `json:"quantity"`
+	TotalCost     int         `json:"totalCost"`
+	Remaining     int         `json:"remaining"`
+	Message       string      `json:"message"`
+	ItemType      string      `json:"itemType"`
+	ItemID        int         `json:"itemId"`
+	PurchasedItem interface{} `json:"purchasedItem"` // Добавлено поле с купленным предметом
+}
+
+type UnlockedBedInfo struct {
+	ID         int  `json:"id"`
+	CellNumber int  `json:"cellNumber"`
+	IsLocked   bool `json:"isLocked"`
 }
 
 type CreateGoodRequest struct {

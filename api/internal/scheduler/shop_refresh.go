@@ -31,9 +31,6 @@ func NewShopRefreshScheduler(
 func (s *ShopRefreshScheduler) Start() {
 	log.Printf("Starting shop refresh scheduler, will run daily at %s", s.shopTime)
 
-	// Первое обновление сразу при старте
-	s.refreshShopForAllUsers()
-
 	// Запускаем ежедневное обновление в указанное время
 	go s.runDailyAt(s.shopTime)
 }
@@ -62,6 +59,8 @@ func (s *ShopRefreshScheduler) runDailyAt(timeStr string) {
 
 		time.Sleep(duration)
 		s.refreshShopForAllUsers()
+
+		// Ждем до следующего дня
 		time.Sleep(24 * time.Hour)
 	}
 }
@@ -75,7 +74,7 @@ func (s *ShopRefreshScheduler) refreshShopForAllUsers() {
 		return
 	}
 
-	log.Printf("Refreshing shop for %d users", len(users))
+	log.Printf("Refreshing shop quantities for %d users", len(users))
 	refreshedCount := 0
 	for _, user := range users {
 		if err := s.refreshShopForUser(ctx, user.ID); err != nil {
@@ -88,48 +87,69 @@ func (s *ShopRefreshScheduler) refreshShopForAllUsers() {
 }
 
 func (s *ShopRefreshScheduler) refreshShopForUser(ctx context.Context, userID int64) error {
-	// Удаляем старые товары
-	err := s.goodRepo.DeleteByUser(ctx, userID)
-	if err != nil {
-		log.Printf("Error deleting old goods for user %d: %v", userID, err)
+	// Обновляем количества существующих товаров до фиксированных значений
+	if err := s.updateShopQuantities(ctx, userID); err != nil {
+		log.Printf("Error updating shop quantities for user %d: %v", userID, err)
 		return err
 	}
 
-	// Создаем фиксированный набор товаров
-	if err := s.createShopGoods(ctx, userID); err != nil {
-		log.Printf("Error creating shop goods for user %d: %v", userID, err)
-		return err
-	}
-
-	log.Printf("Refreshed shop for user %d", userID)
+	log.Printf("Updated shop quantities for user %d", userID)
 	return nil
 }
 
-func (s *ShopRefreshScheduler) createShopGoods(ctx context.Context, userID int64) error {
-	// Фиксированный набор товаров для магазина
-	shopGoods := []model.Good{
-		{
-			UserID:   userID,
-			Type:     "seed",
-			IDGood:   2, // Баклажан
-			Quantity: 5,
-			Cost:     4,
-		},
-		{
-			UserID:   userID,
-			Type:     "seed",
-			IDGood:   1, // Пшеница
-			Quantity: 10,
-			Cost:     1,
-		},
+func (s *ShopRefreshScheduler) updateShopQuantities(ctx context.Context, userID int64) error {
+	// Фиксированные количества для товаров
+	shopQuantities := []struct {
+		goodType string
+		idGood   int
+		quantity int
+		cost     int
+	}{
+		{"seed", 2, 5, 4},  // Баклажан
+		{"seed", 1, 10, 1}, // Пшеница
 	}
 
-	// Создаем каждый товар
-	for _, good := range shopGoods {
-		if err := s.goodRepo.CreateOrUpdate(ctx, &good); err != nil {
-			return fmt.Errorf("failed to create good (type: %s, id: %d): %w", good.Type, good.IDGood, err)
+	for _, item := range shopQuantities {
+		// Пытаемся найти существующий товар
+		existingGood, err := s.goodRepo.GetByUserTypeAndIDGood(ctx, userID, item.goodType, item.idGood)
+		if err != nil && !isNotFoundError(err) {
+			return fmt.Errorf("failed to get good (type: %s, id: %d): %w", item.goodType, item.idGood, err)
+		}
+
+		if existingGood != nil {
+			// Обновляем количество существующего товара
+			if err := s.goodRepo.UpdateQuantity(ctx, existingGood.ID, item.quantity); err != nil {
+				return fmt.Errorf("failed to update quantity for good %d: %w", existingGood.ID, err)
+			}
+
+			// Также обновляем цену если нужно
+			if existingGood.Cost != item.cost {
+				if err := s.goodRepo.UpdateCost(ctx, existingGood.ID, item.cost); err != nil {
+					return fmt.Errorf("failed to update cost for good %d: %w", existingGood.ID, err)
+				}
+			}
+		} else {
+			// Создаем новый товар если не существует
+			good := model.Good{
+				UserID:   userID,
+				Type:     item.goodType,
+				IDGood:   item.idGood,
+				Quantity: item.quantity,
+				Cost:     item.cost,
+			}
+
+			if err := s.goodRepo.Create(ctx, &good); err != nil {
+				return fmt.Errorf("failed to create good (type: %s, id: %d): %w", item.goodType, item.idGood, err)
+			}
 		}
 	}
 
 	return nil
+}
+
+// Вспомогательная функция для проверки ошибки "not found"
+func isNotFoundError(err error) bool {
+	return err != nil && (err.Error() == "good not found" ||
+		err.Error() == "good with id= not found" ||
+		err.Error() == "not found")
 }

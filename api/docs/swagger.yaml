@@ -23,6 +23,25 @@ definitions:
         example: 5
         type: integer
     type: object
+  handler.BuyGoodResponse:
+    properties:
+      goodId:
+        type: integer
+      itemId:
+        type: integer
+      itemType:
+        type: string
+      message:
+        type: string
+      purchasedItem:
+        description: Добавлено поле с купленным предметом
+      quantity:
+        type: integer
+      remaining:
+        type: integer
+      totalCost:
+        type: integer
+    type: object
   handler.CreateGoodRequest:
     properties:
       cost:
@@ -142,9 +161,7 @@ definitions:
     type: object
   handler.IPlant:
     properties:
-      FinalStage:
-        type: integer
-      currentStage:
+      currentGrowth:
         type: integer
       id:
         type: integer
@@ -152,6 +169,8 @@ definitions:
         type: string
       name:
         type: string
+      targetGrowth:
+        type: integer
     type: object
   handler.LevelInfoResponse:
     properties:
@@ -213,9 +232,9 @@ definitions:
         items:
           $ref: '#/definitions/handler.SeedStorage'
         type: array
-      shopStorage:
+      shopItem:
         items:
-          $ref: '#/definitions/model.Good'
+          $ref: '#/definitions/handler.ShopItem'
         type: array
       strick:
         type: integer
@@ -227,6 +246,18 @@ definitions:
         items:
           $ref: '#/definitions/model.Task'
         type: array
+    type: object
+  handler.ShopItem:
+    properties:
+      cost:
+        type: integer
+      id:
+        type: integer
+      item: {}
+      quantity:
+        type: integer
+      type:
+        type: string
     type: object
   handler.TagCreateRequest:
     properties:
@@ -675,18 +706,22 @@ definitions:
     properties:
       createdAt:
         type: string
+      icon:
+        type: string
       id:
         type: integer
+      imgPlant:
+        type: string
+      name:
+        type: string
       quantity:
         type: integer
-      seedIcon:
+      rarity:
         type: string
       seedId:
         type: integer
-      seedName:
-        type: string
-      seedRarity:
-        type: string
+      targetGrowth:
+        type: integer
       userId:
         type: integer
     type: object
@@ -1389,6 +1424,65 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Добавить количество товара
+      tags:
+      - goods
+  /goods/{id}/buy:
+    post:
+      consumes:
+      - application/json
+      description: Покупает один товар из магазина, списывая золото и добавляя товар
+        в инвентарь
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Good ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.BuyGoodResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Купить товар
       tags:
       - goods
   /goods/{id}/cost:
@@ -3110,7 +3204,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.UserPlant'
+            $ref: '#/definitions/handler.IPlant'
         "400":
           description: Bad Request
           schema:

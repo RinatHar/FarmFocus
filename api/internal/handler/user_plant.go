@@ -113,7 +113,7 @@ func (h *UserPlantHandler) GetUserPlantByID(c echo.Context) error {
 // @Security ApiKeyAuth
 // @Param X-User-ID header string true "User ID"
 // @Param request body UserPlantCreateRequest true "Данные для посадки растения"
-// @Success 200 {object} model.UserPlant
+// @Success 200 {object} IPlant
 // @Failure 400 {object} map[string]string
 // @Failure 401 {object} map[string]string
 // @Failure 403 {object} map[string]string
@@ -189,7 +189,22 @@ func (h *UserPlantHandler) CreateUserPlant(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, plant)
+	// Получаем детали семени для формирования IPlant
+	seed, err := h.seedRepo.GetByID(ctx, req.SeedID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get seed details"})
+	}
+
+	// Формируем ответ в формате IPlant
+	iPlant := IPlant{
+		ID:           plant.ID,
+		Name:         seed.Name,
+		CurrentGrowth: plant.CurrentGrowth,
+		TargetGrowth:   seed.TargetGrowth,
+		ImgPath:      seed.ImgPlant, // Используем поле img_plant из семени
+	}
+
+	return c.JSON(http.StatusOK, iPlant)
 }
 
 // AddGrowth godoc

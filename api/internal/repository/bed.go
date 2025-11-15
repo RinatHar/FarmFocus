@@ -300,3 +300,39 @@ func (r *BedRepo) GetAll(ctx context.Context) ([]model.Bed, error) {
 	}
 	return beds, nil
 }
+
+// UnlockNextBed разблокирует следующую закрытую грядку пользователя (по cellNumber)
+func (r *BedRepo) UnlockNextBed(ctx context.Context, userID int64) (*model.Bed, error) {
+	// Находим первую заблокированную грядку с минимальным cell_number
+	query := `
+		SELECT id, user_id, cell_number, is_locked, created_at
+		FROM bed
+		WHERE user_id = $1 AND is_locked = true
+		ORDER BY cell_number
+		LIMIT 1
+	`
+
+	var bed model.Bed
+	err := r.db.QueryRow(ctx, query, userID).Scan(
+		&bed.ID, &bed.UserID, &bed.CellNumber, &bed.IsLocked, &bed.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("no locked beds available for user %d", userID)
+		}
+		return nil, err
+	}
+
+	// Разблокируем грядку
+	if err := r.Unlock(ctx, bed.ID); err != nil {
+		return nil, fmt.Errorf("failed to unlock bed %d: %w", bed.ID, err)
+	}
+
+	// Получаем обновленную грядку
+	unlockedBed, err := r.GetByID(ctx, bed.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return unlockedBed, nil
+}

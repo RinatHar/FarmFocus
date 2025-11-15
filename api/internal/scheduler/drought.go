@@ -36,9 +36,6 @@ func NewDroughtScheduler(
 func (s *DroughtScheduler) Start() {
 	log.Printf("Starting drought scheduler, will run daily at %s", s.checkTime)
 
-	// Первая проверка сразу при старте
-	s.checkDroughtForAllUsers()
-
 	// Запускаем ежедневную проверку в указанное время
 	go s.runDailyAt(s.checkTime)
 }

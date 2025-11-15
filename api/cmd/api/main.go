@@ -152,7 +152,13 @@ func main() {
 		bedRepo,
 		seedRepo,
 	)
-	goodHandler := handler.NewGoodHandler(goodRepo)
+	goodHandler := handler.NewGoodHandler(
+		goodRepo,
+		userStatRepo,
+		userSeedRepo,
+		bedRepo,
+		seedRepo,
+	)
 
 	// Routes
 	setupRoutes(e, userHandler, userStatHandler, taskHandler, habitHandler, tagHandler, seedHandler, userSeedHandler, bedHandler, userPlantHandler, goodHandler)
@@ -199,6 +205,7 @@ func setupRoutes(
 	goodGroup.DELETE("/:id", goodHandler.DeleteGood)
 	goodGroup.POST("/batch", goodHandler.CreateBatchGoods)
 	goodGroup.PATCH("/:id/add-quantity", goodHandler.AddQuantity)
+	goodGroup.POST("/:id/buy", goodHandler.BuyGood)
 
 	// Task routes
 	taskGroup := e.Group("/tasks")

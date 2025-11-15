@@ -1204,6 +1204,95 @@ const docTemplate = `{
                 }
             }
         },
+        "/goods/{id}/buy": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Покупает один товар из магазина, списывая золото и добавляя товар в инвентарь",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "goods"
+                ],
+                "summary": "Купить товар",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Good ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.BuyGoodResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/goods/{id}/cost": {
             "put": {
                 "security": [
@@ -3684,7 +3773,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.UserPlant"
+                            "$ref": "#/definitions/handler.IPlant"
                         }
                     },
                     "400": {
@@ -5559,6 +5648,35 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.BuyGoodResponse": {
+            "type": "object",
+            "properties": {
+                "goodId": {
+                    "type": "integer"
+                },
+                "itemId": {
+                    "type": "integer"
+                },
+                "itemType": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "purchasedItem": {
+                    "description": "Добавлено поле с купленным предметом"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "remaining": {
+                    "type": "integer"
+                },
+                "totalCost": {
+                    "type": "integer"
+                }
+            }
+        },
         "handler.CreateGoodRequest": {
             "type": "object",
             "required": [
@@ -5727,10 +5845,7 @@ const docTemplate = `{
         "handler.IPlant": {
             "type": "object",
             "properties": {
-                "FinalStage": {
-                    "type": "integer"
-                },
-                "currentStage": {
+                "currentGrowth": {
                     "type": "integer"
                 },
                 "id": {
@@ -5741,6 +5856,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "targetGrowth": {
+                    "type": "integer"
                 }
             }
         },
@@ -5835,10 +5953,10 @@ const docTemplate = `{
                         "$ref": "#/definitions/handler.SeedStorage"
                     }
                 },
-                "shopStorage": {
+                "shopItem": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.Good"
+                        "$ref": "#/definitions/handler.ShopItem"
                     }
                 },
                 "strick": {
@@ -5855,6 +5973,24 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.Task"
                     }
+                }
+            }
+        },
+        "handler.ShopItem": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "item": {},
+                "quantity": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -6527,23 +6663,29 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
+                "icon": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "imgPlant": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
                 },
                 "quantity": {
                     "type": "integer"
                 },
-                "seedIcon": {
+                "rarity": {
                     "type": "string"
                 },
                 "seedId": {
                     "type": "integer"
                 },
-                "seedName": {
-                    "type": "string"
-                },
-                "seedRarity": {
-                    "type": "string"
+                "targetGrowth": {
+                    "type": "integer"
                 },
                 "userId": {
                     "type": "integer"

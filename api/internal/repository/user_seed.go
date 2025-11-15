@@ -149,7 +149,8 @@ func (r *UserSeedRepo) Delete(ctx context.Context, userID int64, seedID int) err
 func (r *UserSeedRepo) GetUserSeedsWithDetails(ctx context.Context, userID int64) ([]model.UserSeedWithDetails, error) {
 	query := `
 		SELECT us.id, us.user_id, us.seed_id, us.quantity, us.created_at,
-		       s.name as seed_name, s.icon as seed_icon, s.rarity as seed_rarity
+		       s.name as seed_name, s.icon as seed_icon, s.target_growth as seed_target_growth, 
+		       s.rarity as seed_rarity, s.img_plant as seed_imgPlant
 		FROM user_seed us
 		INNER JOIN seed s ON us.seed_id = s.id
 		WHERE us.user_id = $1
@@ -166,7 +167,7 @@ func (r *UserSeedRepo) GetUserSeedsWithDetails(ctx context.Context, userID int64
 		var userSeed model.UserSeedWithDetails
 		if err := rows.Scan(
 			&userSeed.ID, &userSeed.UserID, &userSeed.SeedID, &userSeed.Quantity, &userSeed.CreatedAt,
-			&userSeed.SeedName, &userSeed.SeedIcon, &userSeed.SeedRarity,
+			&userSeed.SeedName, &userSeed.SeedIcon, &userSeed.TargetGrowth, &userSeed.Rarity, &userSeed.ImgPlant,
 		); err != nil {
 			return nil, err
 		}

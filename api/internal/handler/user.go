@@ -164,7 +164,13 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 	}
 
 	// Получаем товары из магазина
-	shopStorage, err := h.goodRepo.GetByUser(ctx, userID)
+	shopGoods, err := h.goodRepo.GetByUser(ctx, userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// Преобразуем товары в нужный формат
+	shopStorage, err := h.transformShopGoods(ctx, shopGoods)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -179,11 +185,11 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 	plantMap := make(map[int]IPlant)
 	for _, plant := range plants {
 		plantMap[plant.BedID] = IPlant{
-			ID:           plant.ID,
-			Name:         plant.SeedName,
-			CurrentStage: plant.CurrentGrowth,
-			FinalStage:   plant.TargetGrowth,
-			ImgPath:      plant.SeedImgPlant, // Используем imgPlant вместо icon
+			ID:            plant.ID,
+			Name:          plant.SeedName,
+			CurrentGrowth: plant.CurrentGrowth,
+			TargetGrowth:  plant.TargetGrowth,
+			ImgPath:       plant.SeedImgPlant,
 		}
 	}
 
@@ -236,6 +242,45 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+// transformShopGoods преобразует товары из магазина в нужный формат
+func (h *UserHandler) transformShopGoods(ctx context.Context, goods []model.Good) ([]ShopItem, error) {
+	var shopItems []ShopItem
+
+	for _, good := range goods {
+		shopItem := ShopItem{
+			ID:       good.ID,
+			Quantity: good.Quantity,
+			Cost:     good.Cost,
+			Type:     good.Type,
+		}
+
+		switch good.Type {
+		case "seed":
+			// Для семян получаем детали семени
+			seed, err := h.seedRepo.GetByID(ctx, good.IDGood)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get seed details for ID %d: %w", good.IDGood, err)
+			}
+			shopItem.Item = SeedItem{
+				ID:           seed.ID,
+				Name:         seed.Name,
+				Icon:         seed.Icon,
+				ImgPlant:     seed.ImgPlant,
+				TargetGrowth: seed.TargetGrowth,
+				Rarity:       seed.Rarity,
+			}
+
+		default:
+			// Для других типов товаров можно добавить соответствующую логику
+			shopItem.Item = nil
+		}
+
+		shopItems = append(shopItems, shopItem)
+	}
+
+	return shopItems, nil
 }
 
 // shouldHabitBeCompletedYesterday проверяет, должна ли привычка быть выполнена вчера
@@ -479,11 +524,11 @@ type UserUpdateRequest struct {
 
 // IPlant представляет растение на грядке
 type IPlant struct {
-	ID           int    `json:"id"`
-	Name         string `json:"name"`
-	CurrentStage int    `json:"currentStage"`
-	FinalStage   int    `json:"FinalStage"`
-	ImgPath      string `json:"imgPath"`
+	ID            int    `json:"id"`
+	Name          string `json:"name"`
+	CurrentGrowth int    `json:"currentGrowth"`
+	TargetGrowth  int    `json:"targetGrowth"`
+	ImgPath       string `json:"imgPath"`
 }
 
 // IBed представляет грядку с растением
@@ -506,7 +551,26 @@ type ServerFarmData struct {
 	Field          []IBed                      `json:"field"`
 	Seeds          []SeedStorage               `json:"seeds"`
 	InventorySeeds []model.UserSeedWithDetails `json:"inventorySeeds"`
-	ShopStorage    []model.Good                `json:"shopStorage"`
+	ShopStorage    []ShopItem                  `json:"shopItem"`
+}
+
+// ShopItem представляет товар в магазине
+type ShopItem struct {
+	ID       int         `json:"id"`
+	Quantity int         `json:"quantity"`
+	Cost     int         `json:"cost"`
+	Type     string      `json:"type"`
+	Item     interface{} `json:"item,omitempty"`
+}
+
+// SeedItem представляет семя в магазине
+type SeedItem struct {
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	Icon         string `json:"icon"`
+	ImgPlant     string `json:"imgPlant"`
+	TargetGrowth int    `json:"targetGrowth"`
+	Rarity       string `json:"rarity"`
 }
 
 // SeedStorage представляет растение на грядке (для отдельного списка)

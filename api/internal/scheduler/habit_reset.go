@@ -30,9 +30,6 @@ func NewHabitResetScheduler(
 func (s *HabitResetScheduler) Start() {
 	log.Printf("Starting habit reset scheduler, will run daily at %s", s.resetTime)
 
-	// Первый сброс сразу при старте
-	s.resetHabitsForAllUsers()
-
 	// Запускаем ежедневный сброс в указанное время
 	go s.runDailyAt(s.resetTime)
 }
