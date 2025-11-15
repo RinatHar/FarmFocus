@@ -27,8 +27,6 @@ import (
 
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
-
-// @host 10.155.36.40:8080
 // @BasePath /
 // @schemes http
 // @securityDefinitions.apikey ApiKeyAuth
@@ -41,10 +39,6 @@ func main() {
 	// CORS middleware
 	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
 		AllowOrigins: []string{
-			"http://192.168.0.2:5006",
-			"http://10.155.36.67:5006",
-			"http://localhost:3000",
-			"http://localhost:5006",
 			"*",
 		},
 		AllowMethods: []string{

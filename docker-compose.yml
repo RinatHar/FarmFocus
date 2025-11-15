@@ -56,9 +56,23 @@ services:
       - api
     networks:
       - farmfocus-network
-    # Порт не нужен для бота, но можно добавить для health checks
     ports:
       - "8081:8080"
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: farmfocus_ui
+    restart: always
+    env_file:
+      - ./ui/.env
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+    networks:
+      - farmfocus-network
 
 volumes:
   db_data:
