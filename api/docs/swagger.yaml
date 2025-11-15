@@ -1,0 +1,4412 @@
+basePath: /
+definitions:
+  handler.AddQuantityRequest:
+    properties:
+      amount:
+        minimum: 1
+        type: integer
+    required:
+    - amount
+    type: object
+  handler.BedCreateRequest:
+    properties:
+      cellNumber:
+        example: 1
+        type: integer
+      isLocked:
+        example: false
+        type: boolean
+    type: object
+  handler.BedInitialRequest:
+    properties:
+      count:
+        example: 5
+        type: integer
+    type: object
+  handler.BuyGoodResponse:
+    properties:
+      goodId:
+        type: integer
+      itemId:
+        type: integer
+      itemType:
+        type: string
+      message:
+        type: string
+      purchasedItem:
+        description: Добавлено поле с купленным предметом
+      quantity:
+        type: integer
+      remaining:
+        type: integer
+      totalCost:
+        type: integer
+    type: object
+  handler.CreateGoodRequest:
+    properties:
+      cost:
+        minimum: 0
+        type: integer
+      idGood:
+        minimum: 1
+        type: integer
+      quantity:
+        minimum: 0
+        type: integer
+      type:
+        type: string
+    required:
+    - cost
+    - idGood
+    - type
+    type: object
+  handler.HabitCompletionResponse:
+    properties:
+      plantsGrown:
+        example: 3
+        type: integer
+      xpEarned:
+        example: 150
+        type: integer
+    type: object
+  handler.HabitCreateRequest:
+    properties:
+      count:
+        example: 0
+        type: integer
+      description:
+        example: Ежедневная утренняя зарядка 15 минут
+        type: string
+      difficulty:
+        example: medium
+        type: string
+      every:
+        example: 1
+        type: integer
+      period:
+        example: day
+        type: string
+      startDate:
+        example: "2024-01-15T00:00:00Z"
+        type: string
+      tagId:
+        example: 1
+        type: integer
+      title:
+        example: Утренняя зарядка
+        type: string
+      xpReward:
+        example: 50
+        type: integer
+    type: object
+  handler.HabitIncrementResponse:
+    properties:
+      count:
+        example: 5
+        type: integer
+    type: object
+  handler.HabitResetResponse:
+    properties:
+      message:
+        example: Habit count reset successfully
+        type: string
+    type: object
+  handler.HabitUndoResponse:
+    properties:
+      xpEarned:
+        example: 150
+        type: integer
+    type: object
+  handler.HabitUpdateRequest:
+    properties:
+      count:
+        example: 5
+        type: integer
+      description:
+        example: Обновленное описание привычки
+        type: string
+      difficulty:
+        example: hard
+        type: string
+      done:
+        example: false
+        type: boolean
+      every:
+        example: 3
+        type: integer
+      period:
+        example: week
+        type: string
+      startDate:
+        example: "2024-01-20T00:00:00Z"
+        type: string
+      tagId:
+        example: 2
+        type: integer
+      title:
+        example: Утренняя зарядка - обновлено
+        type: string
+      xpReward:
+        example: 75
+        type: integer
+    type: object
+  handler.IBed:
+    properties:
+      id:
+        type: integer
+      isLock:
+        type: boolean
+      plant:
+        $ref: '#/definitions/handler.IPlant'
+    type: object
+  handler.IPlant:
+    properties:
+      currentGrowth:
+        type: integer
+      id:
+        type: integer
+      imgPath:
+        type: string
+      name:
+        type: string
+      targetGrowth:
+        type: integer
+    type: object
+  handler.LevelInfoResponse:
+    properties:
+      experience:
+        type: integer
+      experienceForNextLevel:
+        type: integer
+      level:
+        type: integer
+      progressPercent:
+        type: number
+    type: object
+  handler.SeedStorage:
+    properties:
+      bedId:
+        type: integer
+      createdAt:
+        type: string
+      currentGrowth:
+        type: integer
+      icon:
+        type: string
+      id:
+        type: integer
+      imgPath:
+        type: string
+      isWithered:
+        type: boolean
+      seedId:
+        type: integer
+      seedName:
+        type: string
+      targetGrowth:
+        type: integer
+    type: object
+  handler.ServerFarmData:
+    properties:
+      coins:
+        type: integer
+      currentXp:
+        type: integer
+      didTaskToday:
+        type: boolean
+      field:
+        items:
+          $ref: '#/definitions/handler.IBed'
+        type: array
+      habits:
+        items:
+          $ref: '#/definitions/model.Habit'
+        type: array
+      inventorySeeds:
+        items:
+          $ref: '#/definitions/model.UserSeedWithDetails'
+        type: array
+      isDrought:
+        type: boolean
+      seeds:
+        items:
+          $ref: '#/definitions/handler.SeedStorage'
+        type: array
+      shopItem:
+        items:
+          $ref: '#/definitions/handler.ShopItem'
+        type: array
+      strick:
+        type: integer
+      tags:
+        items:
+          $ref: '#/definitions/model.Tag'
+        type: array
+      tasks:
+        items:
+          $ref: '#/definitions/model.Task'
+        type: array
+    type: object
+  handler.ShopItem:
+    properties:
+      cost:
+        type: integer
+      id:
+        type: integer
+      item: {}
+      quantity:
+        type: integer
+      type:
+        type: string
+    type: object
+  handler.TagCreateRequest:
+    properties:
+      color:
+        example: '#FF5733'
+        type: string
+      name:
+        example: Работа
+        type: string
+    type: object
+  handler.TagUpdateRequest:
+    properties:
+      color:
+        example: '#33FF57'
+        type: string
+      name:
+        example: Работа - обновлено
+        type: string
+    type: object
+  handler.TaskCompletionResponse:
+    properties:
+      plantsGrown:
+        example: 3
+        type: integer
+      xpEarned:
+        example: 150
+        type: integer
+    type: object
+  handler.TaskCreateRequest:
+    properties:
+      date:
+        example: "2024-01-15T00:00:00Z"
+        type: string
+      description:
+        example: Нужно завершить все задачи по проекту до конца недели
+        type: string
+      difficulty:
+        example: medium
+        type: string
+      tagId:
+        example: 1
+        type: integer
+      title:
+        example: Завершить проект
+        type: string
+    type: object
+  handler.TaskUndoResponse:
+    properties:
+      xpEarned:
+        example: 150
+        type: integer
+    type: object
+  handler.TaskUpdateRequest:
+    properties:
+      date:
+        example: "2024-01-20T00:00:00Z"
+        type: string
+      description:
+        example: Обновленное описание задачи
+        type: string
+      difficulty:
+        example: hard
+        type: string
+      done:
+        example: false
+        type: boolean
+      tagId:
+        example: 2
+        type: integer
+      title:
+        example: Завершить проект - обновлено
+        type: string
+      xpReward:
+        example: 150
+        type: integer
+    type: object
+  handler.UpdateCostRequest:
+    properties:
+      cost:
+        minimum: 0
+        type: integer
+    required:
+    - cost
+    type: object
+  handler.UpdateQuantityRequest:
+    properties:
+      quantity:
+        minimum: 0
+        type: integer
+    required:
+    - quantity
+    type: object
+  handler.UserCreateRequest:
+    properties:
+      maxId:
+        example: 123456789
+        type: integer
+      username:
+        example: john_doe
+        type: string
+    type: object
+  handler.UserPlantCreateRequest:
+    properties:
+      cellNumber:
+        example: 1
+        type: integer
+      seedId:
+        example: 1
+        type: integer
+    type: object
+  handler.UserPlantGrowthRequest:
+    properties:
+      growthAmount:
+        example: 10
+        type: integer
+    type: object
+  handler.UserPlantGrowthResponse:
+    properties:
+      newGrowth:
+        example: 50
+        type: integer
+    type: object
+  handler.UserSeedAddRequest:
+    properties:
+      quantity:
+        example: 5
+        type: integer
+      seedId:
+        example: 1
+        type: integer
+    type: object
+  handler.UserSeedCountResponse:
+    properties:
+      totalSeeds:
+        example: 15
+        type: integer
+    type: object
+  handler.UserSeedQuantityRequest:
+    properties:
+      amount:
+        example: 3
+        type: integer
+    type: object
+  handler.UserStatAmountRequest:
+    properties:
+      amount:
+        example: 100
+        type: integer
+    type: object
+  handler.UserStatMessageResponse:
+    properties:
+      message:
+        example: Operation completed successfully
+        type: string
+    type: object
+  handler.UserUpdateRequest:
+    properties:
+      username:
+        example: john_doe_updated
+        type: string
+    type: object
+  model.AvailableSeed:
+    properties:
+      level:
+        type: integer
+      rarity:
+        type: string
+      seedId:
+        type: integer
+      seedName:
+        type: string
+      userAmount:
+        type: integer
+    type: object
+  model.Bed:
+    properties:
+      cellNumber:
+        type: integer
+      createdAt:
+        type: string
+      id:
+        type: integer
+      isLocked:
+        type: boolean
+      userId:
+        type: integer
+    type: object
+  model.BedWithUserPlant:
+    properties:
+      cellNumber:
+        type: integer
+      createdAt:
+        type: string
+      id:
+        type: integer
+      isLocked:
+        type: boolean
+      userId:
+        type: integer
+      userPlant:
+        $ref: '#/definitions/model.UserPlantWithSeed'
+    type: object
+  model.Good:
+    properties:
+      cost:
+        type: integer
+      createdAt:
+        type: string
+      id:
+        type: integer
+      idGood:
+        type: integer
+      quantity:
+        type: integer
+      type:
+        description: '''seed'', ''bed'''
+        type: string
+      updatedAt:
+        type: string
+      userId:
+        type: integer
+    type: object
+  model.Habit:
+    properties:
+      count:
+        type: integer
+      createdAt:
+        type: string
+      description:
+        type: string
+      difficulty:
+        type: string
+      done:
+        type: boolean
+      every:
+        type: integer
+      id:
+        type: integer
+      period:
+        type: string
+      startDate:
+        type: string
+      tag:
+        $ref: '#/definitions/model.Tag'
+      tagId:
+        type: integer
+      title:
+        type: string
+      userId:
+        type: integer
+      xpReward:
+        type: integer
+    type: object
+  model.Seed:
+    properties:
+      createdAt:
+        type: string
+      goldReward:
+        type: integer
+      icon:
+        type: string
+      id:
+        type: integer
+      imgPlant:
+        type: string
+      levelRequired:
+        type: integer
+      modification:
+        type: number
+      name:
+        type: string
+      rarity:
+        type: string
+      targetGrowth:
+        type: integer
+      xpReward:
+        type: integer
+    type: object
+  model.Tag:
+    properties:
+      color:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      userid:
+        type: integer
+    type: object
+  model.TagWithCount:
+    properties:
+      color:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      task_count:
+        type: integer
+      userid:
+        type: integer
+    type: object
+  model.Task:
+    properties:
+      createdAt:
+        type: string
+      date:
+        type: string
+      description:
+        type: string
+      difficulty:
+        type: string
+      done:
+        type: boolean
+      id:
+        type: integer
+      tag:
+        $ref: '#/definitions/model.Tag'
+      tagId:
+        type: integer
+      title:
+        type: string
+      userId:
+        type: integer
+      xpReward:
+        type: integer
+    type: object
+  model.User:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      isActive:
+        type: boolean
+      lastLogin:
+        type: string
+      maxId:
+        type: integer
+      username:
+        type: string
+    type: object
+  model.UserPlant:
+    properties:
+      bedId:
+        type: integer
+      createdAt:
+        type: string
+      currentGrowth:
+        type: integer
+      id:
+        type: integer
+      isWithered:
+        type: boolean
+      seedId:
+        type: integer
+      userId:
+        type: integer
+    type: object
+  model.UserPlantHarvestResult:
+    properties:
+      bedId:
+        type: integer
+      createdAt:
+        type: string
+      currentGrowth:
+        type: integer
+      goldEarned:
+        type: integer
+      goldReward:
+        type: integer
+      growthPercent:
+        type: integer
+      id:
+        type: integer
+      isReady:
+        type: boolean
+      isWithered:
+        type: boolean
+      seedIcon:
+        type: string
+      seedId:
+        type: integer
+      seedImgPlant:
+        type: string
+      seedName:
+        type: string
+      targetGrowth:
+        type: integer
+      userId:
+        type: integer
+      xpEarned:
+        type: integer
+      xpReward:
+        type: integer
+    type: object
+  model.UserPlantWithSeed:
+    properties:
+      bedId:
+        type: integer
+      createdAt:
+        type: string
+      currentGrowth:
+        type: integer
+      goldReward:
+        type: integer
+      growthPercent:
+        type: integer
+      id:
+        type: integer
+      isWithered:
+        type: boolean
+      seedIcon:
+        type: string
+      seedId:
+        type: integer
+      seedImgPlant:
+        type: string
+      seedName:
+        type: string
+      targetGrowth:
+        type: integer
+      userId:
+        type: integer
+      xpReward:
+        type: integer
+    type: object
+  model.UserSeed:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      quantity:
+        type: integer
+      seedId:
+        type: integer
+      userId:
+        type: integer
+    type: object
+  model.UserSeedWithDetails:
+    properties:
+      createdAt:
+        type: string
+      icon:
+        type: string
+      id:
+        type: integer
+      imgPlant:
+        type: string
+      name:
+        type: string
+      quantity:
+        type: integer
+      rarity:
+        type: string
+      seedId:
+        type: integer
+      targetGrowth:
+        type: integer
+      userId:
+        type: integer
+    type: object
+  model.UserStat:
+    properties:
+      currentStreak:
+        type: integer
+      experience:
+        type: integer
+      gold:
+        type: integer
+      id:
+        type: integer
+      isDrought:
+        type: boolean
+      longestStreak:
+        type: integer
+      totalPlantHarvested:
+        type: integer
+      totalTasksCompleted:
+        type: integer
+      updatedAt:
+        type: string
+      userId:
+        type: integer
+    type: object
+host: 10.155.36.40:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: API для FarmFocus - системы управления задачами и фермой
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: FarmFocus API
+  version: "1.0"
+paths:
+  /beds:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех грядок текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Bed'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить все грядки пользователя
+      tags:
+      - beds
+    post:
+      consumes:
+      - application/json
+      description: Создает новую грядку для текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Данные для создания грядки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.BedCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Bed'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать новую грядку
+      tags:
+      - beds
+  /beds/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает грядку по указанному ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Bed ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Bed'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить грядку по ID
+      tags:
+      - beds
+  /beds/{id}/lock:
+    post:
+      consumes:
+      - application/json
+      description: Блокирует указанную грядку
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Bed ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Заблокировать грядку
+      tags:
+      - beds
+  /beds/{id}/unlock:
+    post:
+      consumes:
+      - application/json
+      description: Разблокирует указанную грядку
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Bed ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Разблокировать грядку
+      tags:
+      - beds
+  /beds/available:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список разблокированных грядок пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Bed'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить доступные грядки
+      tags:
+      - beds
+  /beds/cell/{cellNumber}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает грядку по номеру ячейки для текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Cell Number
+        in: path
+        name: cellNumber
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Bed'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить грядку по номеру ячейки
+      tags:
+      - beds
+  /beds/empty:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список пустых грядок пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Bed'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить пустые грядки
+      tags:
+      - beds
+  /beds/init:
+    post:
+      consumes:
+      - application/json
+      description: Создает начальный набор грядок для пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Данные для создания начальных грядок
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.BedInitialRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать начальные грядки
+      tags:
+      - beds
+  /beds/with-plants:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает грядки с информацией о посаженных растениях
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.BedWithUserPlant'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить грядки с растениями
+      tags:
+      - beds
+  /goods:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех товаров текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Good'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить товары пользователя
+      tags:
+      - goods
+    post:
+      consumes:
+      - application/json
+      description: Создает новый товар для пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Данные товара
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateGoodRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Good'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать товар
+      tags:
+      - goods
+  /goods/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет товар по ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Good ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить товар
+      tags:
+      - goods
+  /goods/{id}/add-quantity:
+    patch:
+      consumes:
+      - application/json
+      description: Добавляет указанное количество к существующему товару
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Good ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Количество для добавления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.AddQuantityRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Good'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Добавить количество товара
+      tags:
+      - goods
+  /goods/{id}/buy:
+    post:
+      consumes:
+      - application/json
+      description: Покупает один товар из магазина, списывая золото и добавляя товар
+        в инвентарь
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Good ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.BuyGoodResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Купить товар
+      tags:
+      - goods
+  /goods/{id}/cost:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет цену товара по ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Good ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Новая цена
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateCostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Good'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить цену товара
+      tags:
+      - goods
+  /goods/{id}/quantity:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет количество товара по ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Good ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Новое количество
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateQuantityRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Good'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить количество товара
+      tags:
+      - goods
+  /goods/batch:
+    post:
+      consumes:
+      - application/json
+      description: Создает несколько товаров для пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Массив товаров
+        in: body
+        name: request
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/handler.CreateGoodRequest'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            items:
+              $ref: '#/definitions/model.Good'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать несколько товаров
+      tags:
+      - goods
+  /goods/type/{type}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает товары указанного типа для текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Good Type (seed/bed/tool/fertilizer)
+        in: path
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Good'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить товары пользователя по типу
+      tags:
+      - goods
+  /habits:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех привычек текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Фильтр по статусу выполнения
+        in: query
+        name: done
+        type: boolean
+      - description: Фильтр по периоду (day/week/month)
+        in: query
+        name: period
+        type: string
+      - description: Фильтр по ID тега
+        in: query
+        name: tag_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Habit'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить все привычки пользователя
+      tags:
+      - habits
+    post:
+      consumes:
+      - application/json
+      description: Создает новую привычку для текущего пользователя с базовым количеством
+        опыта с учетом count
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Данные для создания привычки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.HabitCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Habit'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать новую привычку
+      tags:
+      - habits
+  /habits/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет привычку по ID, предварительно удаляя связанные записи
+        в логе прогресса
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить привычку
+      tags:
+      - habits
+    get:
+      consumes:
+      - application/json
+      description: Возвращает привычку по указанному ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Habit'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить привычку по ID
+      tags:
+      - habits
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о привычке
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Обновленные данные привычки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.HabitUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Habit'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить привычку
+      tags:
+      - habits
+  /habits/{id}/done:
+    patch:
+      consumes:
+      - application/json
+      description: Помечает привычку как выполненную, увеличивает счетчик, добавляет
+        опыт пользователю по формуле, создает запись в логе прогресса, увеличивает
+        рост всех активных растений пользователя на 1 и увеличивает стрик если это
+        первое выполнение сегодня
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HabitCompletionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Пометить привычку как выполненную
+      tags:
+      - habits
+  /habits/{id}/increment:
+    patch:
+      consumes:
+      - application/json
+      description: Увеличивает счетчик привычки на 1
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HabitIncrementResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Увеличить счетчик привычки
+      tags:
+      - habits
+  /habits/{id}/reset:
+    patch:
+      consumes:
+      - application/json
+      description: Сбрасывает счетчик привычки до 0
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HabitResetResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Сбросить счетчик привычки
+      tags:
+      - habits
+  /habits/{id}/undone:
+    patch:
+      consumes:
+      - application/json
+      description: Помечает привычку как невыполненную, уменьшает счетчик и возвращает
+        опыт обратно на основе последней записи в логе
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Habit ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HabitUndoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Пометить привычку как невыполненную
+      tags:
+      - habits
+  /seeds:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает полный список всех доступных семян
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Seed'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить все семена
+      tags:
+      - seeds
+    post:
+      consumes:
+      - application/json
+      description: Создает новое семя (только для администраторов)
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Данные семени
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.Seed'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Seed'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать новое семя
+      tags:
+      - seeds
+  /seeds/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет семя из системы (только для администраторов)
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Seed ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить семя
+      tags:
+      - seeds
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о конкретном семени по его ID
+      parameters:
+      - description: Seed ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Seed'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить семя по ID
+      tags:
+      - seeds
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о семени (только для администраторов)
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Seed ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Обновленные данные семени
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.Seed'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Seed'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить семя
+      tags:
+      - seeds
+  /seeds/level:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список семян определенного уровня
+      parameters:
+      - description: Уровень семян
+        in: query
+        name: level
+        required: true
+        type: integer
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Seed'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить семена по уровню
+      tags:
+      - seeds
+  /seeds/rarity:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список семян определенной редкости
+      parameters:
+      - description: Редкость семян (common, rare, epic, legendary)
+        in: query
+        name: rarity
+        required: true
+        type: string
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Seed'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить семена по редкости
+      tags:
+      - seeds
+  /tags:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех тегов текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Tag'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить все теги пользователя
+      tags:
+      - tags
+    post:
+      consumes:
+      - application/json
+      description: Создает новый тег для текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Данные для создания тега
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.TagCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Tag'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать новый тег
+      tags:
+      - tags
+  /tags/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет тег и сбрасывает его у всех связанных задач и привычек
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить тег
+      tags:
+      - tags
+    get:
+      consumes:
+      - application/json
+      description: Возвращает тег по указанному ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Tag'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить тег по ID
+      tags:
+      - tags
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о теге
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Обновленные данные тега
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.TagUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Tag'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить тег
+      tags:
+      - tags
+  /tags/with-count:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает теги с информацией о количестве привязанных задач
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.TagWithCount'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить теги с количеством задач
+      tags:
+      - tags
+  /tasks:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех задач текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Фильтр по статусу выполнения
+        in: query
+        name: done
+        type: boolean
+      - description: 'Фильтр по дате (формат: 2006-01-02)'
+        in: query
+        name: date
+        type: string
+      - description: Фильтр по ID тега
+        in: query
+        name: tag_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Task'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить все задачи пользователя
+      tags:
+      - tasks
+    post:
+      consumes:
+      - application/json
+      description: Создает новую задачу для текущего пользователя с базовым количеством
+        опыта
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Данные для создания задачи
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.TaskCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Task'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать новую задачу
+      tags:
+      - tasks
+  /tasks/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет задачу по ID, предварительно удаляя связанные записи в
+        логе прогресса
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить задачу
+      tags:
+      - tasks
+    get:
+      consumes:
+      - application/json
+      description: Возвращает задачу по указанному ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Task'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить задачу по ID
+      tags:
+      - tasks
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о задаче
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Обновленные данные задачи
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.TaskUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Task'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить задачу
+      tags:
+      - tasks
+  /tasks/{id}/done:
+    patch:
+      consumes:
+      - application/json
+      description: Помечает задачу как выполненную, добавляет опыт пользователю по
+        формуле, создает запись в логе прогресса, увеличивает рост всех активных растений
+        пользователя на 1 и увеличивает стрик если это первое выполнение сегодня
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TaskCompletionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Пометить задачу как выполненную
+      tags:
+      - tasks
+  /tasks/{id}/undone:
+    patch:
+      consumes:
+      - application/json
+      description: Помечает задачу как невыполненную и возвращает опыт обратно на
+        основе последней записи в логе
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TaskUndoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Пометить задачу как невыполненную
+      tags:
+      - tasks
+  /user-plants:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех растений текущего пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.UserPlant'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить все растения пользователя
+      tags:
+      - user-plants
+    post:
+      consumes:
+      - application/json
+      description: Сажает новое растение на свободную грядку по cellNumber, используя
+        семя из инвентаря
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Данные для посадки растения
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UserPlantCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.IPlant'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Посадить новое растение
+      tags:
+      - user-plants
+  /user-plants/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет растение (например, если оно погибло)
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Plant ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить растение
+      tags:
+      - user-plants
+    get:
+      consumes:
+      - application/json
+      description: Возвращает растение по указанному ID
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Plant ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserPlant'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить растение по ID
+      tags:
+      - user-plants
+  /user-plants/{id}/add-growth:
+    post:
+      consumes:
+      - application/json
+      description: Увеличивает текущий рост растения на указанное количество
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Plant ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Количество роста для добавления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UserPlantGrowthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserPlantGrowthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Добавить рост растению
+      tags:
+      - user-plants
+  /user-plants/{id}/harvest:
+    post:
+      consumes:
+      - application/json
+      description: Собирает готовое к сбору растение и начисляет награды
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Plant ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserPlantHarvestResult'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Собрать растение
+      tags:
+      - user-plants
+  /user-plants/growing:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает растения, которые еще не достигли максимального роста
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.UserPlantWithSeed'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить растущие растения
+      tags:
+      - user-plants
+  /user-plants/ready:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает растения, которые достигли максимального роста и готовы
+        к сбору
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.UserPlantWithSeed'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить растения готовые к сбору
+      tags:
+      - user-plants
+  /user-plants/with-details:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает растения с подробной информацией о семенах
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.UserPlantWithSeed'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить растения с деталями
+      tags:
+      - user-plants
+  /user-seeds:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список семян в инвентаре пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.UserSeed'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить семена пользователя
+      tags:
+      - user-seeds
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новые семена или увеличивает количество существующих
+        семян в инвентаре
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Данные для добавления семян
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UserSeedAddRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserSeed'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Добавить семена пользователю
+      tags:
+      - user-seeds
+  /user-seeds/{seedId}:
+    delete:
+      consumes:
+      - application/json
+      description: Полностью удаляет семена из инвентаря пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Seed ID
+        in: path
+        name: seedId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить семена из инвентаря
+      tags:
+      - user-seeds
+  /user-seeds/{seedId}/add:
+    post:
+      consumes:
+      - application/json
+      description: Увеличивает количество существующих семян в инвентаре
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Seed ID
+        in: path
+        name: seedId
+        required: true
+        type: integer
+      - description: Количество для добавления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UserSeedQuantityRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Добавить количество семян
+      tags:
+      - user-seeds
+  /user-seeds/{seedId}/subtract:
+    post:
+      consumes:
+      - application/json
+      description: Уменьшает количество семян в инвентаре (например, при посадке)
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Seed ID
+        in: path
+        name: seedId
+        required: true
+        type: integer
+      - description: Количество для вычитания
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UserSeedQuantityRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Уменьшить количество семян
+      tags:
+      - user-seeds
+  /user-seeds/available:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает все существующие семена с информацией о количестве у
+        пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Фильтр по уровню семян
+        in: query
+        name: level
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.AvailableSeed'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить доступные семена
+      tags:
+      - user-seeds
+  /user-seeds/count:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает количество различных типов семян в инвентаре пользователя
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserSeedCountResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить количество уникальных семян
+      tags:
+      - user-seeds
+  /user-seeds/with-details:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает семена пользователя с подробной информацией о каждом
+        типе семян
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.UserSeedWithDetails'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить семена пользователя с деталями
+      tags:
+      - user-seeds
+  /user-stats:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает статистику пользователя. Если статистика не существует
+        - создает новую.
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UserStat'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить статистику пользователя
+      tags:
+      - user-stats
+  /user-stats/experience:
+    post:
+      consumes:
+      - application/json
+      description: Увеличивает количество опыта пользователя на указанное значение
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Количество опыта для добавления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UserStatAmountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserStatMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Добавить опыт пользователю
+      tags:
+      - user-stats
+  /user-stats/gold:
+    post:
+      consumes:
+      - application/json
+      description: Увеличивает количество золота пользователя на указанное значение
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Количество золота для добавления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UserStatAmountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserStatMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Добавить золото пользователю
+      tags:
+      - user-stats
+  /user-stats/level-info:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает текущий уровень, опыт и прогресс до следующего уровня
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.LevelInfoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить информацию об уровне
+      tags:
+      - user-stats
+  /user-stats/streak/increment:
+    post:
+      consumes:
+      - application/json
+      description: Увеличивает ежедневный стрик пользователя на 1
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserStatMessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Увеличить стрик пользователя
+      tags:
+      - user-stats
+  /user-stats/streak/reset:
+    post:
+      consumes:
+      - application/json
+      description: Сбрасывает ежедневный стрик пользователя до 0
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserStatMessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Сбросить стрик пользователя
+      tags:
+      - user-stats
+  /users:
+    post:
+      consumes:
+      - application/json
+      description: Создает нового пользователя или обновляет существующего по MaxID.
+        При создании также создается статистика, начальные грядки, добавляется стартовый
+        набор семян и товары в магазин.
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UserCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пользователь обновлен
+          schema:
+            $ref: '#/definitions/model.User'
+        "201":
+          description: Пользователь создан
+          schema:
+            $ref: '#/definitions/model.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Создать или обновить пользователя
+      tags:
+      - users
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о текущем аутентифицированном пользователе
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить текущего пользователя
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о текущем пользователе (например, имя пользователя)
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      - description: Обновленные данные пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UserUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить данные пользователя
+      tags:
+      - users
+  /users/recover-plants:
+    post:
+      consumes:
+      - application/json
+      description: Восстанавливает засохшие растения после выполнения ежедневного
+        задания
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Восстановить засохшие растения
+      tags:
+      - users
+  /users/sync:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает все данные пользователя для синхронизации в формате
+        ServerFarmData
+      parameters:
+      - description: User ID
+        in: header
+        name: X-User-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.ServerFarmData'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Синхронизировать все данные пользователя
+      tags:
+      - users
+schemes:
+- http
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-User-ID
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,82 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: farmfocus_db
+    restart: always
+    environment:
+      POSTGRES_USER: farmfocus
+      POSTGRES_PASSWORD: farmfocus
+      POSTGRES_DB: farmfocus
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - farmfocus-network
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: farmfocus_api
+    restart: always
+    env_file:
+      - ./api/.env
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    networks:
+      - farmfocus-network
+
+  migrate:
+    image: golang:1.25-alpine
+    working_dir: /app
+    volumes:
+      - ./api:/app
+    command: go run ./cmd/migrate/migrate.go
+    env_file:
+      - ./api/.env
+    depends_on:
+      - db
+    networks:
+      - farmfocus-network
+
+  bot-api:
+    build:
+      context: ./bot-api
+      dockerfile: Dockerfile
+    container_name: farmfocus_bot_api
+    restart: always
+    env_file:
+      - ./bot-api/.env
+    depends_on:
+      - api
+    networks:
+      - farmfocus-network
+    ports:
+      - "8081:8080"
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: farmfocus_ui
+    restart: always
+    env_file:
+      - ./ui/.env
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+    networks:
+      - farmfocus-network
+
+volumes:
+  db_data:
+
+networks:
+  farmfocus-network:
+    driver: bridge
