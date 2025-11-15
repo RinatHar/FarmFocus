@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+
+@theme {
+  --breakpoint-xs: 22rem;
+}
+
+
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; 
+}
