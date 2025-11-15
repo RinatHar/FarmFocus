@@ -100,7 +100,7 @@ func (h *UserHandler) RecoverPlants(c echo.Context) error {
 
 // SyncUserData godoc
 // @Summary Синхронизировать все данные пользователя
-// @Description Возвращает все данные пользователя для синхронизации в формате ServerFarmData
+// @Description Возвращает все данные пользователя для синхронизации в формате ServerFarmData. Если пользователь не существует - создает его с дефолтными данными.
 // @Tags users
 // @Accept json
 // @Produce json
@@ -118,70 +118,70 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 
 	ctx := context.Background()
 
-	// Получаем статистику пользователя
+	// Проверяем существует ли пользователь, если нет - создаем через CreateOrUpdateUser
+	_, err = h.repo.GetByID(ctx, userID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			// Создаем пользователя с дефолтными данными
+			if err := h.createUserWithDefaults(ctx, userID); err != nil {
+				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create user: " + err.Error()})
+			}
+		}
+	}
+
+	// Остальная логика синхронизации без изменений...
 	stats, err := h.statRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Проверяем, выполнял ли пользователь задачи сегодня
+	// ... остальной код синхронизации без изменений
 	didTaskToday, err := h.progressRepo.HasUserCompletedTaskToday(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Используем поле IsDrought из статистики вместо старой логики проверки
 	isDrought := stats.IsDrought
-
-	// Получаем все задачи пользователя
 	tasks, err := h.taskRepo.GetAll(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Получаем все привычки пользователя
 	habits, err := h.habitRepo.GetAll(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Получаем все теги пользователя
 	tags, err := h.tagRepo.GetByUser(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Получаем грядки (field)
 	beds, err := h.bedRepo.GetByUser(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Получаем семена из инвентаря
 	inventorySeeds, err := h.userSeedRepo.GetUserSeedsWithDetails(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Получаем товары из магазина
 	shopGoods, err := h.goodRepo.GetByUser(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Преобразуем товары в нужный формат
 	shopStorage, err := h.transformShopGoods(ctx, shopGoods)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Получаем растения на грядках для seeds (SeedStorage)
 	plants, err := h.userPlantRepo.GetWithSeedDetails(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Преобразуем растения в формат IPlant для грядок
 	plantMap := make(map[int]IPlant)
 	for _, plant := range plants {
 		plantMap[plant.BedID] = IPlant{
@@ -193,7 +193,6 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 		}
 	}
 
-	// Формируем грядки с растениями
 	field := make([]IBed, len(beds))
 	for i, bed := range beds {
 		var plant *IPlant
@@ -208,7 +207,6 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 		}
 	}
 
-	// Преобразуем растения в формат SeedStorage для seeds
 	seeds := make([]SeedStorage, len(plants))
 	for i, plant := range plants {
 		seeds[i] = SeedStorage{
@@ -225,7 +223,6 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 		}
 	}
 
-	// Формируем ответ в нужном формате
 	response := ServerFarmData{
 		CurrentXp:      int(stats.Experience),
 		Coins:          int(stats.Gold),
@@ -242,6 +239,56 @@ func (h *UserHandler) SyncUserData(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+// createUserWithDefaults создает пользователя с дефолтными данными
+func (h *UserHandler) createUserWithDefaults(ctx context.Context, userID int64) error {
+	// Создаем пользователя
+	user := &model.User{
+		MaxID:     userID,
+		Username:  fmt.Sprintf("User_%d", userID),
+		CreatedAt: time.Now(),
+		IsActive:  true,
+	}
+
+	if err := h.repo.Create(ctx, user); err != nil {
+		return fmt.Errorf("failed to create user: %w", err)
+	}
+
+	// Создаем статистику пользователя
+	stat := &model.UserStat{
+		UserID:              user.ID,
+		Experience:          0,
+		Gold:                10,
+		CurrentStreak:       0,
+		LongestStreak:       0,
+		TotalTasksCompleted: 0,
+		TotalPlantHarvested: 0,
+		UpdatedAt:           time.Now(),
+	}
+
+	if err := h.statRepo.Create(ctx, stat); err != nil {
+		return fmt.Errorf("failed to create user stat: %w", err)
+	}
+
+	// Создаем начальные грядки
+	if err := h.bedRepo.CreateInitialBeds(ctx, user.ID, 9); err != nil {
+		return fmt.Errorf("failed to create initial beds: %w", err)
+	}
+
+	// Добавляем стартовый набор семян (10 пшеницы)
+	wheatSeedID := 1
+	initialWheatQuantity := 10
+	if err := h.userSeedRepo.AddOrUpdateQuantity(ctx, user.ID, wheatSeedID, initialWheatQuantity); err != nil {
+		return fmt.Errorf("failed to add initial seeds: %w", err)
+	}
+
+	// Создаем стартовый набор товаров в магазине
+	if err := h.createInitialShopGoods(ctx, user.ID); err != nil {
+		return fmt.Errorf("failed to create initial shop goods: %w", err)
+	}
+
+	return nil
 }
 
 // transformShopGoods преобразует товары из магазина в нужный формат

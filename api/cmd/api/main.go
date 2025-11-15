@@ -40,6 +40,8 @@ func main() {
 	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
 		AllowOrigins: []string{
 			"*",
+			"https://eat-well.online",
+			"http://10.155.36.40:3000",
 		},
 		AllowMethods: []string{
 			echo.GET,
